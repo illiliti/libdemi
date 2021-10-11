@@ -11,8 +11,8 @@ int demi_monitor_recv_devices(struct demi_monitor *dm,
         int (*cb)(struct demi_device *, void *), void *ptr)
 {
     const char *action, *device;
-	prop_dictionary_t event;
-	struct demi_device *dd;
+    prop_dictionary_t event;
+    struct demi_device *dd;
 
     if (!dm || !cb) {
         return -1;
@@ -41,9 +41,9 @@ int demi_monitor_recv_devices(struct demi_monitor *dm,
         if (cb(dd, ptr) == -1) {
             return -1;
         }
-	}
+    }
 
-	return errno == EWOULDBLOCK ? 0 : -1;
+    return errno == EWOULDBLOCK ? 0 : -1;
 }
 
 struct demi_monitor *demi_monitor_init(struct demi *ctx)
