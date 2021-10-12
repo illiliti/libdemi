@@ -45,7 +45,7 @@ int demi_monitor_recv_devices(struct demi_monitor *dm,
         }
     }
 
-	return errno == EAGAIN ? 0 : -1;
+    return errno == EAGAIN ? 0 : -1;
 }
 
 struct demi_monitor *demi_monitor_init(struct demi *ctx)
