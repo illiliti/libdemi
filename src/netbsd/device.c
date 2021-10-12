@@ -32,6 +32,7 @@ const char *demi_device_get_devname(struct demi_device *dd)
     while (devname_r(dd->devnum, dd->devtype, dd->devname, len) != 0) {
         if (errno != ERANGE) {
             free(dd->devname);
+            dd->devname = NULL;
             return NULL;
         }
 
@@ -39,6 +40,7 @@ const char *demi_device_get_devname(struct demi_device *dd)
 
         if (!devname) {
             free(dd->devname);
+            dd->devname = NULL;
             return NULL;
         }
 
