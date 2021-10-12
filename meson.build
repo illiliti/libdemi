@@ -37,7 +37,6 @@ demi_lib = library(
   include_directories: include_directories('include'),
   dependencies: demi_dep,
   version: meson.project_version(),
-  # XXX link_args doesn't work with muon
   link_args: '-Wl,--version-script,' + meson.current_source_dir() / demi_sym,
   # XXX link_depends doesn't work with muon
   link_depends: demi_sym,
