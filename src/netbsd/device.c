@@ -1,5 +1,6 @@
 #include <errno.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -74,6 +75,13 @@ const char *demi_device_get_devnode(struct demi_device *dd)
     }
 
     snprintf(dd->devnode, len, "/dev/%s", devname);
+
+    if (access(dd->devnode, F_OK) == -1) {
+        free(dd->devnode);
+        dd->devnode = NULL;
+        return NULL;
+    }
+
     return dd->devnode;
 }
 
