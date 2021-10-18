@@ -1,4 +1,3 @@
-#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/drvctlio.h>
@@ -7,43 +6,35 @@
 #include "demi.h"
 #include "netbsd.h"
 
-int demi_monitor_recv_devices(struct demi_monitor *dm,
-        int (*cb)(struct demi_device *, void *), void *ptr)
+struct demi_device *demi_monitor_recv_device(struct demi_monitor *dm)
 {
     const char *action, *device;
     prop_dictionary_t event;
     struct demi_device *dd;
 
-    if (!dm || !cb) {
-        return -1;
+    if (!dm) {
+        return NULL;
     }
 
-    while (prop_dictionary_recv_ioctl(dm->ctx->fd, DRVGETEVENT, &event) == 0) {
-        prop_dictionary_get_cstring_nocopy(event, "event", &action);
-        prop_dictionary_get_cstring_nocopy(event, "device", &device);
-
-        if (strcmp(action, "device-attach") == 0) {
-            dd = device_init(dm->ctx, NULL, device, 0, 0, DEMI_ACTION_ATTACH);
-        }
-        else if (strcmp(action, "device-detach") == 0) {
-            dd = device_init(dm->ctx, NULL, device, 0, 0, DEMI_ACTION_DETACH);
-        }
-        else {
-            abort();
-        }
-
-        prop_object_release(event);
-
-        if (!dd) {
-            return -1;
-        }
-
-        if (cb(dd, ptr) == -1) {
-            return -1;
-        }
+    if (prop_dictionary_recv_ioctl(dm->ctx->fd, DRVGETEVENT, &event) != 0) {
+        return NULL;
     }
 
-    return errno == EWOULDBLOCK ? 0 : -1;
+    prop_dictionary_get_cstring_nocopy(event, "event", &action);
+    prop_dictionary_get_cstring_nocopy(event, "device", &device);
+
+    if (strcmp(action, "device-attach") == 0) {
+        dd = device_init(dm->ctx, NULL, device, 0, 0, DEMI_ACTION_ATTACH);
+    }
+    else if (strcmp(action, "device-detach") == 0) {
+        dd = device_init(dm->ctx, NULL, device, 0, 0, DEMI_ACTION_DETACH);
+    }
+    else {
+        abort();
+    }
+
+    prop_object_release(event);
+    return dd;
 }
 
 struct demi_monitor *demi_monitor_init(struct demi *ctx)

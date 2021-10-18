@@ -1,4 +1,3 @@
-#include <errno.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <sys/socket.h>
@@ -7,15 +6,17 @@
 #include "demi.h"
 #include "linux.h"
 
-int demi_monitor_recv_devices(struct demi_monitor *dm,
-        int (*cb)(struct demi_device *, void *), void *ptr)
+struct demi_device *demi_monitor_recv_device(struct demi_monitor *dm)
 {
     struct sockaddr_nl sa = {0};
     struct msghdr hdr = {0};
     struct iovec iov = {0};
-    struct demi_device *dd;
     char buf[8192];
     ssize_t len;
+
+    if (!dm) {
+        return NULL;
+    }
 
     iov.iov_base = buf;
     iov.iov_len = sizeof(buf);
@@ -25,27 +26,21 @@ int demi_monitor_recv_devices(struct demi_monitor *dm,
     hdr.msg_iov = &iov;
     hdr.msg_iovlen = 1;
 
-    while ((len = recvmsg(dm->fd, &hdr, 0)) > 0) {
-        if (hdr.msg_flags & MSG_TRUNC) {
-            continue;
-        }
+    len = recvmsg(dm->fd, &hdr, 0);
 
-        if (sa.nl_groups == 0x0 || (sa.nl_groups == 0x1 && sa.nl_pid != 0)) {
-            continue;
-        }
-
-        dd = device_init_uevent(dm->ctx, buf, len);
-
-        if (!dd) {
-            return -1;
-        }
-
-        if (cb(dd, ptr) == -1) {
-            return -1;
-        }
+    if (len <= 0) {
+        return NULL;
     }
 
-    return errno == EAGAIN ? 0 : -1;
+    if (hdr.msg_flags & MSG_TRUNC) {
+        return NULL;
+    }
+
+    if (sa.nl_groups == 0x0 || (sa.nl_groups == 0x1 && sa.nl_pid != 0)) {
+        return NULL;
+    }
+
+    return device_init_uevent(dm->ctx, buf, len);
 }
 
 struct demi_monitor *demi_monitor_init(struct demi *ctx)

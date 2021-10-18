@@ -56,8 +56,7 @@ struct demi_device *demi_device_init_devnum(struct demi *, dev_t, mode_t);
 void demi_device_deinit(struct demi_device *);
 
 int demi_monitor_get_fd(struct demi_monitor *);
-int demi_monitor_recv_devices(struct demi_monitor *,
-        int (*)(struct demi_device *, void *), void *);
+struct demi_device *demi_monitor_recv_device(struct demi_monitor *);
 
 struct demi_monitor *demi_monitor_init(struct demi *);
 void demi_monitor_deinit(struct demi_monitor *);

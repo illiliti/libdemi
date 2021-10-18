@@ -4,30 +4,21 @@
 #include "demi.h"
 #include "udev.h"
 
-int demi_monitor_recv_devices(struct demi_monitor *dm,
-        int (*cb)(struct demi_device *, void *), void *ptr)
+struct demi_device *demi_monitor_recv_device(struct demi_monitor *dm)
 {
     struct udev_device *udev_device;
-    struct demi_device *dd;
 
-    if (!dm || !cb) {
-        return -1;
+    if (!dm) {
+        return NULL;
     }
 
-    while ((udev_device = udev_monitor_receive_device(dm->udev_monitor))) {
-        dd = device_init(dm->ctx, udev_device);
+    udev_device = udev_monitor_receive_device(dm->udev_monitor);
 
-        if (!dd) {
-            udev_device_unref(udev_device);
-            return -1;
-        }
-
-        if (cb(dd, ptr) == -1) {
-            return -1;
-        }
+    if (!udev_device) {
+        return NULL;
     }
 
-    return 0;
+    return device_init(dm->ctx, udev_device);
 }
 
 struct demi_monitor *demi_monitor_init(struct demi *ctx)
