@@ -4,7 +4,7 @@
 #include "demi.h"
 #include "udev.h"
 
-int demi_enumerate_scan_devices(struct demi_enumerate *de,
+int demi_enumerate_scan_system(struct demi_enumerate *de,
         int (*cb)(struct demi_device *, void *), void *ptr)
 {
     struct udev_device *udev_device;

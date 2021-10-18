@@ -7,7 +7,7 @@
 #include "demi.h"
 #include "netbsd.h"
 
-static int scan_devices(struct demi_enumerate *de, const char *dev,
+static int scan_system(struct demi_enumerate *de, const char *dev,
        int (*cb)(struct demi_device *, void *), void *ptr)
 {
     struct devlistargs laa = {0};
@@ -49,7 +49,7 @@ static int scan_devices(struct demi_enumerate *de, const char *dev,
             return -1;
         }
 
-        if (scan_devices(de, laa.l_childname[i], cb, ptr) == -1) {
+        if (scan_system(de, laa.l_childname[i], cb, ptr) == -1) {
             free(laa.l_childname);
             return -1;
         }
@@ -59,10 +59,10 @@ static int scan_devices(struct demi_enumerate *de, const char *dev,
     return 0;
 }
 
-int demi_enumerate_scan_devices(struct demi_enumerate *de,
+int demi_enumerate_scan_system(struct demi_enumerate *de,
         int (*cb)(struct demi_device *, void *), void *ptr)
 {
-    return de && cb ? scan_devices(de, "", cb, ptr) : -1;
+    return de && cb ? scan_system(de, "", cb, ptr) : -1;
 }
 
 struct demi_enumerate *demi_enumerate_init(struct demi *ctx)

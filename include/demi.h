@@ -62,7 +62,7 @@ int demi_monitor_recv_devices(struct demi_monitor *,
 struct demi_monitor *demi_monitor_init(struct demi *);
 void demi_monitor_deinit(struct demi_monitor *);
 
-int demi_enumerate_scan_devices(struct demi_enumerate *,
+int demi_enumerate_scan_system(struct demi_enumerate *,
         int (*)(struct demi_device *, void *), void *);
 
 struct demi_enumerate *demi_enumerate_init(struct demi *);

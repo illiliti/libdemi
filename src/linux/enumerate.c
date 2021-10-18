@@ -10,7 +10,7 @@ static int filter_dot(const struct dirent *dt)
     return dt->d_name[0] != '.';
 }
 
-static int scan_devices(struct demi_enumerate *de, const char *path,
+static int scan_system(struct demi_enumerate *de, const char *path,
         int (*cb)(struct demi_device *, void *), void *ptr)
 {
     struct demi_device *dd;
@@ -48,7 +48,7 @@ static int scan_devices(struct demi_enumerate *de, const char *path,
     return ret;
 }
 
-int demi_enumerate_scan_devices(struct demi_enumerate *de,
+int demi_enumerate_scan_system(struct demi_enumerate *de,
         int (*cb)(struct demi_device *, void *), void *ptr)
 {
     static const char *path[] = { "/sys/dev/block", "/sys/dev/char", NULL };
@@ -59,7 +59,7 @@ int demi_enumerate_scan_devices(struct demi_enumerate *de,
     }
 
     for (i = 0; path[i]; i++) {
-        if (scan_devices(de, path[i], cb, ptr) == -1) {
+        if (scan_system(de, path[i], cb, ptr) == -1) {
             return -1;
         }
     }
