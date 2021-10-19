@@ -5,5 +5,5 @@ demi_src += files(
   'enumerate.c',
 )
 
-demi_dep += meson.get_compiler('c').find_library('prop')
+demi_dep += cc.find_library('prop')
 add_project_arguments('-D_NETBSD_SOURCE', language: 'c')
