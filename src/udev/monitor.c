@@ -7,6 +7,7 @@
 struct demi_device *demi_monitor_recv_device(struct demi_monitor *dm)
 {
     struct udev_device *udev_device;
+    struct demi_device *dd;
 
     if (!dm) {
         return NULL;
@@ -18,7 +19,14 @@ struct demi_device *demi_monitor_recv_device(struct demi_monitor *dm)
         return NULL;
     }
 
-    return device_init(dm->ctx, udev_device);
+    dd = device_init(dm->ctx, udev_device);
+
+    if (!dd) {
+        udev_device_unref(udev_device);
+        return NULL;
+    }
+
+    return dd;
 }
 
 struct demi_monitor *demi_monitor_init(struct demi *ctx)
