@@ -10,9 +10,9 @@ struct demi_device {
     struct udev_device *udev_device;
     struct demi *ctx;
 
-    enum demi_device_action action;
-    enum demi_device_class class;
-    enum demi_device_type type;
+    enum demi_action action;
+    enum demi_class class;
+    enum demi_type type;
 };
 
 struct demi_monitor {

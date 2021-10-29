@@ -4,6 +4,8 @@
 #include <linux/input.h>
 #elif defined(__FreeBSD__)
 #include <dev/evdev/input.h>
+#elif defined(__DragonFly__)
+#include <dev/misc/evdev/input.h>
 #endif
 
 #include "demi.h"
@@ -36,4 +38,4 @@ struct evdev {
     unsigned long ev[BITS_TO_LONGS(EV_CNT)];
 };
 
-enum demi_device_type parse_evdev(struct evdev *);
+enum demi_type parse_evdev(struct evdev *);

@@ -6,7 +6,7 @@ static inline int test_bit(unsigned long *arr, unsigned long bit)
     return !!(arr[BIT_WORD(bit)] & BIT_MASK(bit));
 }
 
-enum demi_device_type parse_evdev(struct evdev *evdev)
+enum demi_type parse_evdev(struct evdev *evdev)
 {
     if (test_bit(evdev->prop, INPUT_PROP_POINTING_STICK)) {
         return DEMI_TYPE_POINTING_STICK;

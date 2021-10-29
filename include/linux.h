@@ -1,3 +1,6 @@
+#include <stdint.h>
+#include <stddef.h>
+
 #include "demi.h"
 #include "evdev.h"
 
@@ -8,19 +11,21 @@ struct demi {
 struct demi_device {
     struct demi *ctx;
 
-    unsigned major, minor;
-    int devunit;
+    int32_t major;
+    int32_t minor;
+    int32_t devunit;
+
+    char *parent_uevent;
 
     char *subsystem;
     char *devnode;
     char *devname;
-    char *uevent;
 
     struct evdev evdev;
 
-    enum demi_device_action action;
-    enum demi_device_class class;
-    enum demi_device_type type;
+    enum demi_action action;
+    enum demi_class class;
+    enum demi_type type;
 };
 
 struct demi_monitor {

@@ -5,47 +5,43 @@
 #include "demi.h"
 #include "linux.h"
 
-static int filter_dot(const struct dirent *dt)
-{
-    return dt->d_name[0] != '.';
-}
-
 static int scan_system(struct demi_enumerate *de, const char *path,
         int (*cb)(struct demi_device *, void *), void *ptr)
 {
     struct demi_device *dd;
-    struct dirent **dt;
-    int i, n, ret = 0;
+    struct dirent *dt;
     char syspath[48];
+    DIR *dp;
 
-    // XXX readdir vs readdir_r vs scandir
-    n = scandir(path, &dt, filter_dot, NULL);
+    dp = opendir(path);
 
-    if (n == -1) {
+    if (!dp) {
         return -1;
     }
 
-    for (i = 0; i < n; i++) {
-        snprintf(syspath, sizeof(syspath), "%s/%s", path, dt[i]->d_name);
+    while ((dt = readdir(dp))) {
+        if (dt->d_name[0] == '.') {
+            continue;
+        }
+
+        // TODO use memcpy
+        snprintf(syspath, sizeof(syspath), "%s/%s", path, dt->d_name);
         dd = device_init_syspath(de->ctx, syspath);
 
+        // XXX continue?
         if (!dd) {
-            ret = -1;
-            break;
+            closedir(dp);
+            return -1;
         }
 
         if (cb(dd, ptr) == -1) {
-            ret = -1;
-            break;
+            closedir(dp);
+            return -1;
         }
     }
 
-    for (i = 0; i < n; i++) {
-        free(dt[i]);
-    }
-
-    free(dt);
-    return ret;
+    closedir(dp);
+    return 0;
 }
 
 int demi_enumerate_scan_system(struct demi_enumerate *de,

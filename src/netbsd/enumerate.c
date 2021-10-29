@@ -1,6 +1,5 @@
-#include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/ioctl.h>
 #include <sys/drvctlio.h>
 
@@ -12,33 +11,40 @@ static int scan_system(struct demi_enumerate *de, const char *dev,
 {
     struct devlistargs laa = {0};
     struct demi_device *dd;
-    size_t i;
+    size_t i, children;
 
     strlcpy(laa.l_devname, dev, sizeof(laa.l_devname));
 
-    if (ioctl(de->ctx->fd, DRVLISTDEV, &laa) == -1) {
-        return -1;
-    }
+    do {
+        if (ioctl(de->ctx->fd, DRVLISTDEV, &laa) == -1) {
+            free(laa.l_childname);
+            return -1;
+        }
 
-    if (laa.l_children == 0) {
-        return 0;
-    }
+        if (laa.l_children == 0) {
+            free(laa.l_childname);
+            return 0;
+        }
 
-    laa.l_childname = calloc(laa.l_children, sizeof(laa.l_childname[0]));
+        children = laa.l_children;
 
-    if (!laa.l_childname) {
-        return -1;
-    }
+        if (reallocarr(&laa.l_childname, children,
+            sizeof(laa.l_childname[0])) != 0) {
+            free(laa.l_childname);
+            return -1;
+        }
 
-    if (ioctl(de->ctx->fd, DRVLISTDEV, &laa) == -1) {
-        free(laa.l_childname);
-        return -1;
+        if (ioctl(de->ctx->fd, DRVLISTDEV, &laa) == -1) {
+            free(laa.l_childname);
+            return -1;
+        }
     }
+    while (children != laa.l_children);
 
     for (i = 0; i < laa.l_children; i++) {
-        dd = device_init(de->ctx, NULL, laa.l_childname[i], 0, 0,
-                DEMI_ACTION_UNKNOWN);
+        dd = device_init(de->ctx, NULL, laa.l_childname[i], 0, 0, 0);
 
+        // XXX continue?
         if (!dd) {
             free(laa.l_childname);
             return -1;
@@ -55,7 +61,6 @@ static int scan_system(struct demi_enumerate *de, const char *dev,
         }
     }
 
-    free(laa.l_childname);
     return 0;
 }
 

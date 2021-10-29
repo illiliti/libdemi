@@ -1,5 +1,7 @@
+#include <errno.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <libudev.h>
 #include <sys/stat.h>
 #include <sys/sysmacros.h>
@@ -9,7 +11,7 @@
 
 static const struct {
     const char *prop;
-    enum demi_device_type type;
+    enum demi_type type;
 } prop_type[] = {
     { "ID_INPUT_MOUSE", DEMI_TYPE_MOUSE },
     { "ID_INPUT_TABLET", DEMI_TYPE_TABLET },
@@ -20,94 +22,158 @@ static const struct {
     { "ID_INPUT_SWITCH", DEMI_TYPE_SWITCH },
     { "ID_INPUT_POINTINGSTICK", DEMI_TYPE_POINTING_STICK },
     { "ID_INPUT_ACCELEROMETER", DEMI_TYPE_ACCELEROMETER },
-    { NULL, DEMI_TYPE_UNKNOWN },
+    { NULL, 0 },
 };
 
-const char *demi_device_get_devnode(struct demi_device *dd)
+int demi_device_get_devnode(struct demi_device *dd, const char **devnode)
 {
-    return dd ? udev_device_get_devnode(dd->udev_device) : NULL;
+    const char *node;
+
+    if (!dd || !devnode) {
+        return -EINVAL;
+    }
+
+    node = udev_device_get_devnode(dd->udev_device);
+
+    if (!node) {
+        return -ENOENT;
+    }
+
+    *devnode = node;
+    return 0;
 }
 
-const char *demi_device_get_devname(struct demi_device *dd)
+int demi_device_get_devname(struct demi_device *dd, const char **devname)
 {
-    return dd ? udev_device_get_sysname(dd->udev_device) : NULL;
+    const char *name;
+
+    if (!dd || !devname) {
+        return -EINVAL;
+    }
+
+    name = udev_device_get_sysname(dd->udev_device);
+
+    if (!name) {
+        return -ENOENT;
+    }
+
+    *devname = name;
+    return 0;
 }
 
-dev_t demi_device_get_devnum(struct demi_device *dd)
+int demi_device_get_devnum(struct demi_device *dd, dev_t *devnum)
 {
-    return dd ? udev_device_get_devnum(dd->udev_device) : makedev(0, 0);
+    dev_t num;
+
+    if (!dd || !devnum) {
+        return -EINVAL;
+    }
+
+    num = udev_device_get_devnum(dd->udev_device);
+
+    // XXX
+    if (num == makedev(0, 0)) {
+        return -ENOENT;
+    }
+
+    *devnum = num;
+    return 0;
 }
 
-int demi_device_get_devunit(struct demi_device *dd)
+int demi_device_get_devunit(struct demi_device *dd, uint32_t *devunit)
 {
     const char *sysnum;
     
-    if (!dd) {
-        return -1;
+    if (!dd || !devunit) {
+        return -EINVAL;
     }
 
     sysnum = udev_device_get_sysnum(dd->udev_device);
 
     if (!sysnum) {
-        return -1;
+        return -ENOENT;
     }
 
-    return (int)strtol(sysnum, NULL, 10);
+    *devunit = strtoul(sysnum, NULL, 10);
+    return 0;
 }
 
-enum demi_device_action demi_device_get_action(struct demi_device *dd)
+int demi_device_get_seat(struct demi_device *dd, const char **seat)
 {
-    const char *action;
+    const char *value;
 
-    if (!dd) {
-        return DEMI_ACTION_UNKNOWN;
+    if (!dd || !seat) {
+        return -EINVAL;
+    }
+
+    value = udev_device_get_property_value(dd->udev_device, "ID_SEAT");
+
+    if (!value) {
+        return -ENOENT;
+    }
+
+    *seat = value;
+    return 0;
+}
+
+int demi_device_get_action(struct demi_device *dd, enum demi_action *action)
+{
+    const char *event;
+
+    if (!dd || !action) {
+        return -EINVAL;
     }
 
     if (dd->action) {
-        return dd->action;
+        *action = dd->action;
+        return 0;
     }
 
-    action = udev_device_get_action(dd->udev_device);
+    event = udev_device_get_action(dd->udev_device);
+
+    if (!event) {
+        return -ENOENT;
+    }
 
     // TODO lookup table
-    if (!action) {
-        dd->action = DEMI_ACTION_UNKNOWN;
-    }
-    else if (strcmp(action, "add") == 0) {
+    if (strcmp(event, "add") == 0) {
         dd->action = DEMI_ACTION_ATTACH;
     }
-    else if (strcmp(action, "remove") == 0) {
+    else if (strcmp(event, "remove") == 0) {
         dd->action = DEMI_ACTION_DETACH;
     }
-    else if (strcmp(action, "change") == 0) {
+    else if (strcmp(event, "change") == 0) {
         dd->action = DEMI_ACTION_CHANGE;
     }
     else {
         dd->action = DEMI_ACTION_UNKNOWN;
     }
 
-    return dd->action;
+    *action = dd->action;
+    return 0;
 }
 
-enum demi_device_class demi_device_get_class(struct demi_device *dd)
+int demi_device_get_class(struct demi_device *dd, enum demi_class *class)
 {
     const char *subsystem;
 
-    if (!dd) {
-        return DEMI_CLASS_UNKNOWN;
+    if (!dd || !class) {
+        return -EINVAL;
     }
 
     if (dd->class) {
-        return dd->class;
+        *class = dd->class;
+        return 0;
     } 
 
     subsystem = udev_device_get_subsystem(dd->udev_device);
 
-    // TODO lookup table
     if (!subsystem) {
-        dd->class = DEMI_CLASS_UNKNOWN;
+        return -ENOENT;
     }
-    else if (strcmp(subsystem, "drm") == 0) {
+
+    // TODO lookup table
+    if (strcmp(subsystem, "drm") == 0) {
         dd->class = DEMI_CLASS_DRM;
     }
     else if (strcmp(subsystem, "input") == 0) {
@@ -117,26 +183,35 @@ enum demi_device_class demi_device_get_class(struct demi_device *dd)
         dd->class = DEMI_CLASS_UNKNOWN;
     }
 
-    return dd->class;
+    *class = dd->class;
+    return 0;
 }
 
-enum demi_device_type demi_device_get_type(struct demi_device *dd)
+int demi_device_get_type(struct demi_device *dd, enum demi_type *type)
 {
     struct udev_device *parent;
+    enum demi_class class;
     const char *boot_vga;
-    int i;
+    int i, ret;
     
-    if (!dd) {
-        return DEMI_TYPE_UNKNOWN;
+    if (!dd || !type) {
+        return -EINVAL;
     }
 
     if (dd->type) {
-        return dd->type;
+        *type = dd->type;
+        return 0;
     } 
+
+    ret = demi_device_get_class(dd, &class);
+
+    if (ret < 0) {
+        return ret;
+    }
 
     dd->type = DEMI_TYPE_UNKNOWN;
 
-    switch (demi_device_get_class(dd)) {
+    switch (class) {
     case DEMI_CLASS_DRM:
         parent = udev_device_get_parent_with_subsystem_devtype(dd->udev_device,
                 "pci", NULL);
@@ -164,7 +239,8 @@ enum demi_device_type demi_device_get_type(struct demi_device *dd)
         break;
     }
 
-    return dd->type;
+    *type = dd->type;
+    return 0;
 }
 
 struct demi_device *device_init(struct demi *ctx,

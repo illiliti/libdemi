@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <sys/types.h>
 
 #ifndef _DEMI_H_
@@ -9,7 +10,7 @@ struct demi_monitor;
 struct demi_enumerate;
 
 // TODO extend
-enum demi_device_type {
+enum demi_type {
     DEMI_TYPE_UNKNOWN = 1,
     DEMI_TYPE_MOUSE,
     DEMI_TYPE_TABLET,
@@ -24,32 +25,33 @@ enum demi_device_type {
 };
 
 // TODO extend
-enum demi_device_class {
+enum demi_class {
     DEMI_CLASS_UNKNOWN = 1,
     DEMI_CLASS_DRM,
     DEMI_CLASS_INPUT,
 };
 
-enum demi_device_action {
+enum demi_action {
     DEMI_ACTION_UNKNOWN = 1,
     DEMI_ACTION_ATTACH,
     DEMI_ACTION_DETACH,
     DEMI_ACTION_CHANGE,
-    /* DEMI_ACTION_HOTPLUG, */
-    /* DEMI_ACTION_LEASE, */
+    // DEMI_ACTION_HOTPLUG,
+    // DEMI_ACTION_LEASE,
 };
 
 struct demi *demi_init(void);
 void demi_deinit(struct demi *);
 
-const char *demi_device_get_devnode(struct demi_device *);
-const char *demi_device_get_devname(struct demi_device *);
-dev_t demi_device_get_devnum(struct demi_device *);
-int demi_device_get_devunit(struct demi_device *);
+int demi_device_get_devnode(struct demi_device *, const char **);
+int demi_device_get_devname(struct demi_device *, const char **);
+int demi_device_get_devunit(struct demi_device *, uint32_t *);
+int demi_device_get_devnum(struct demi_device *, dev_t *);
 
-enum demi_device_action demi_device_get_action(struct demi_device *);
-enum demi_device_class demi_device_get_class(struct demi_device *);
-enum demi_device_type demi_device_get_type(struct demi_device *);
+int demi_device_get_action(struct demi_device *, enum demi_action *);
+int demi_device_get_class(struct demi_device *, enum demi_class *);
+int demi_device_get_type(struct demi_device *, enum demi_type *);
+int demi_device_get_seat(struct demi_device *, const char **);
 
 struct demi_device *demi_device_init_devnode(struct demi *, const char *);
 struct demi_device *demi_device_init_devnum(struct demi *, dev_t, mode_t);

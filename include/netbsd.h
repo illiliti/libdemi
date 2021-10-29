@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <sys/types.h>
 
 #include "demi.h"
@@ -9,16 +10,16 @@ struct demi {
 struct demi_device {
     struct demi *ctx;
 
-    mode_t devtype;
     dev_t devnum;
-    int devunit;
+    mode_t devtype;
+    int32_t devunit;
 
     char *devnode;
     char *devname;
 
-    enum demi_device_action action;
-    enum demi_device_class class;
-    enum demi_device_type type;
+    enum demi_action action;
+    enum demi_class class;
+    enum demi_type type;
 };
 
 struct demi_monitor {
@@ -30,4 +31,4 @@ struct demi_enumerate {
 };
 
 struct demi_device *device_init(struct demi *, const char *, const char *,
-        dev_t, mode_t, enum demi_device_action);
+        dev_t, mode_t, enum demi_action);
