@@ -17,9 +17,6 @@ add_project_arguments(cc.get_supported_arguments([
     '-Walloca',
     '-Wstrict-prototypes',
     '-Wmissing-prototypes',
-
-    # this is very annoying
-    '-Wno-format-truncation',
   ]),
   language: 'c',
 )

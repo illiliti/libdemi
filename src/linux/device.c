@@ -380,13 +380,14 @@ static int read_boot_vga(struct demi_device *dd, int dfd)
     return 0;
 }
 
-struct demi_device *device_init_syspath(struct demi *ctx, const char *syspath)
+struct demi_device *device_init_syspath(struct demi *ctx, int bfd,
+		const char *syspath)
 {
     struct demi_device *dd;
     enum demi_class class;
     int dfd;
 
-    dfd = open(syspath, O_DIRECTORY | O_PATH | O_CLOEXEC);
+    dfd = openat(bfd, syspath, O_DIRECTORY | O_PATH | O_CLOEXEC);
 
     if (dfd == -1) {
         return NULL;
@@ -460,7 +461,7 @@ struct demi_device *demi_device_init_devnum(struct demi *ctx, dev_t devnum,
         return NULL;
     }
 
-    return device_init_syspath(ctx, syspath);
+    return device_init_syspath(ctx, -1, syspath);
 }
 
 struct demi_device *demi_device_init_devnode(struct demi *ctx,

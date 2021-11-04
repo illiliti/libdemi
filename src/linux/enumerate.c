@@ -10,8 +10,8 @@ static int scan_system(struct demi_enumerate *de, const char *path,
 {
     struct demi_device *dd;
     struct dirent *dt;
-    char syspath[48];
     DIR *dp;
+    int dfd;
 
     dp = opendir(path);
 
@@ -19,14 +19,14 @@ static int scan_system(struct demi_enumerate *de, const char *path,
         return -1;
     }
 
+    dfd = dirfd(dp);
+
     while ((dt = readdir(dp))) {
         if (dt->d_name[0] == '.') {
             continue;
         }
 
-        // TODO use memcpy
-        snprintf(syspath, sizeof(syspath), "%s/%s", path, dt->d_name);
-        dd = device_init_syspath(de->ctx, syspath);
+        dd = device_init_syspath(de->ctx, dfd, dt->d_name);
 
         // XXX continue?
         if (!dd) {

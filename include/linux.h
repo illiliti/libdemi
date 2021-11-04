@@ -39,4 +39,4 @@ struct demi_enumerate {
 };
 
 struct demi_device *device_init_uevent(struct demi *, const char *, size_t);
-struct demi_device *device_init_syspath(struct demi *, const char *);
+struct demi_device *device_init_syspath(struct demi *, int, const char *);
