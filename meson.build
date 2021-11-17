@@ -14,9 +14,19 @@ cc = meson.get_compiler('c')
 
 add_project_arguments(cc.get_supported_arguments([
     '-Wvla',
+    '-Wgnu',
+    '-Wundef',
     '-Walloca',
+    '-Wshadow',
+    '-Wformat=2',
+    '-Wconversion',
+    '-Warith-conversion',
     '-Wstrict-prototypes',
     '-Wmissing-prototypes',
+    '-Wimplicit-fallthrough=2',
+
+    # this is good but mostly useless
+    '-Wno-sign-conversion',
   ]),
   language: 'c',
 )
