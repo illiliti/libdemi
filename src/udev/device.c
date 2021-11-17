@@ -30,13 +30,15 @@ int demi_device_get_devnode(struct demi_device *dd, const char **devnode)
     const char *node;
 
     if (!dd || !devnode) {
-        return -EINVAL;
+        errno = EINVAL;
+        return -1;
     }
 
     node = udev_device_get_devnode(dd->udev_device);
 
     if (!node) {
-        return -ENOENT;
+        errno = ENOENT;
+        return -1;
     }
 
     *devnode = node;
@@ -48,13 +50,15 @@ int demi_device_get_devname(struct demi_device *dd, const char **devname)
     const char *name;
 
     if (!dd || !devname) {
-        return -EINVAL;
+        errno = EINVAL;
+        return -1;
     }
 
     name = udev_device_get_sysname(dd->udev_device);
 
     if (!name) {
-        return -ENOENT;
+        errno = ENOENT;
+        return -1;
     }
 
     *devname = name;
@@ -66,14 +70,16 @@ int demi_device_get_devnum(struct demi_device *dd, dev_t *devnum)
     dev_t num;
 
     if (!dd || !devnum) {
-        return -EINVAL;
+        errno = EINVAL;
+        return -1;
     }
 
     num = udev_device_get_devnum(dd->udev_device);
 
     // XXX
     if (num == makedev(0, 0)) {
-        return -ENOENT;
+        errno = ENOENT;
+        return -1;
     }
 
     *devnum = num;
@@ -85,16 +91,18 @@ int demi_device_get_devunit(struct demi_device *dd, uint32_t *devunit)
     const char *sysnum;
     
     if (!dd || !devunit) {
-        return -EINVAL;
+        errno = EINVAL;
+        return -1;
     }
 
     sysnum = udev_device_get_sysnum(dd->udev_device);
 
     if (!sysnum) {
-        return -ENOENT;
+        errno = ENOENT;
+        return -1;
     }
 
-    *devunit = strtoul(sysnum, NULL, 10);
+    *devunit = (uint32_t)strtoul(sysnum, NULL, 10);
     return 0;
 }
 
@@ -103,13 +111,15 @@ int demi_device_get_seat(struct demi_device *dd, const char **seat)
     const char *value;
 
     if (!dd || !seat) {
-        return -EINVAL;
+        errno = EINVAL;
+        return -1;
     }
 
     value = udev_device_get_property_value(dd->udev_device, "ID_SEAT");
 
     if (!value) {
-        return -ENOENT;
+        errno = ENOENT;
+        return -1;
     }
 
     *seat = value;
@@ -121,7 +131,8 @@ int demi_device_get_action(struct demi_device *dd, enum demi_action *action)
     const char *event;
 
     if (!dd || !action) {
-        return -EINVAL;
+        errno = EINVAL;
+        return -1;
     }
 
     if (dd->action) {
@@ -132,7 +143,8 @@ int demi_device_get_action(struct demi_device *dd, enum demi_action *action)
     event = udev_device_get_action(dd->udev_device);
 
     if (!event) {
-        return -ENOENT;
+        errno = ENOENT;
+        return -1;
     }
 
     // TODO lookup table
@@ -158,7 +170,8 @@ int demi_device_get_class(struct demi_device *dd, enum demi_class *class)
     const char *subsystem;
 
     if (!dd || !class) {
-        return -EINVAL;
+        errno = EINVAL;
+        return -1;
     }
 
     if (dd->class) {
@@ -169,7 +182,8 @@ int demi_device_get_class(struct demi_device *dd, enum demi_class *class)
     subsystem = udev_device_get_subsystem(dd->udev_device);
 
     if (!subsystem) {
-        return -ENOENT;
+        errno = ENOENT;
+        return -1;
     }
 
     // TODO lookup table
@@ -192,10 +206,11 @@ int demi_device_get_type(struct demi_device *dd, enum demi_type *type)
     struct udev_device *parent;
     enum demi_class class;
     const char *boot_vga;
-    int i, ret;
+    int i;
     
     if (!dd || !type) {
-        return -EINVAL;
+        errno = EINVAL;
+        return -1;
     }
 
     if (dd->type) {
@@ -203,13 +218,9 @@ int demi_device_get_type(struct demi_device *dd, enum demi_type *type)
         return 0;
     } 
 
-    ret = demi_device_get_class(dd, &class);
-
-    if (ret < 0) {
-        return ret;
+    if (demi_device_get_class(dd, &class) == -1) {
+        return -1;
     }
-
-    dd->type = DEMI_TYPE_UNKNOWN;
 
     switch (class) {
     case DEMI_CLASS_DRM:
@@ -236,6 +247,7 @@ int demi_device_get_type(struct demi_device *dd, enum demi_type *type)
 
         break;
     default:
+        dd->type = DEMI_TYPE_UNKNOWN;
         break;
     }
 
@@ -243,7 +255,7 @@ int demi_device_get_type(struct demi_device *dd, enum demi_type *type)
     return 0;
 }
 
-struct demi_device *device_init(struct demi *ctx,
+struct demi_device *device_new(struct demi *ctx,
         struct udev_device *udev_device)
 {
     struct demi_device *dd;
@@ -256,10 +268,11 @@ struct demi_device *device_init(struct demi *ctx,
 
     dd->udev_device = udev_device;
     dd->ctx = ctx;
+    dd->ref = 1;
     return dd;
 }
 
-struct demi_device *demi_device_init_devnum(struct demi *ctx, dev_t devnum,
+struct demi_device *demi_device_new_devnum(struct demi *ctx, dev_t devnum,
         mode_t type)
 {
     struct udev_device *udev_device;
@@ -284,7 +297,7 @@ struct demi_device *demi_device_init_devnum(struct demi *ctx, dev_t devnum,
         return NULL;
     }
 
-    dd = device_init(ctx, udev_device);
+    dd = device_new(ctx, udev_device);
 
     if (!dd) {
         udev_device_unref(udev_device);
@@ -294,7 +307,7 @@ struct demi_device *demi_device_init_devnum(struct demi *ctx, dev_t devnum,
     return dd;
 }
 
-struct demi_device *demi_device_init_devnode(struct demi *ctx,
+struct demi_device *demi_device_new_devnode(struct demi *ctx,
         const char *devnode)
 {
     struct stat st;
@@ -307,12 +320,26 @@ struct demi_device *demi_device_init_devnode(struct demi *ctx,
         return NULL;
     }
 
-    return demi_device_init_devnum(ctx, st.st_rdev, st.st_mode);
+    return demi_device_new_devnum(ctx, st.st_rdev, st.st_mode);
 }
 
-void demi_device_deinit(struct demi_device *dd)
+struct demi_device *demi_device_ref(struct demi_device *dd)
 {
     if (!dd) {
+        return NULL;
+    }
+
+    dd->ref++;
+    return dd;
+}
+
+void demi_device_unref(struct demi_device *dd)
+{
+    if (!dd) {
+        return;
+    }
+
+    if (--dd->ref > 0) {
         return;
     }
 

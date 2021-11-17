@@ -5,11 +5,12 @@
 #include "evdev.h"
 
 struct demi {
-    char dummy;
+    size_t ref;
 };
 
 struct demi_device {
     struct demi *ctx;
+    size_t ref;
 
     int32_t major;
     int32_t minor;
@@ -30,13 +31,15 @@ struct demi_device {
 
 struct demi_monitor {
     struct demi *ctx;
+    size_t ref;
 
     int fd;
 };
 
 struct demi_enumerate {
     struct demi *ctx;
+    size_t ref;
 };
 
-struct demi_device *device_init_uevent(struct demi *, const char *, size_t);
-struct demi_device *device_init_syspath(struct demi *, int, const char *);
+struct demi_device *device_new_uevent(struct demi *, const char *, size_t);
+struct demi_device *device_new_syspath(struct demi *, int, const char *);

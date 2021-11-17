@@ -19,7 +19,7 @@ struct demi_device *demi_monitor_recv_device(struct demi_monitor *dm)
         return NULL;
     }
 
-    dd = device_init(dm->ctx, udev_device);
+    dd = device_new(dm->ctx, udev_device);
 
     if (!dd) {
         udev_device_unref(udev_device);
@@ -29,7 +29,7 @@ struct demi_device *demi_monitor_recv_device(struct demi_monitor *dm)
     return dd;
 }
 
-struct demi_monitor *demi_monitor_init(struct demi *ctx)
+struct demi_monitor *demi_monitor_new(struct demi *ctx)
 {
     struct demi_monitor *dm;
 
@@ -57,12 +57,27 @@ struct demi_monitor *demi_monitor_init(struct demi *ctx)
     }
 
     dm->ctx = ctx;
+    dm->ref = 1;
     return dm;
 }
 
-void demi_monitor_deinit(struct demi_monitor *dm)
+struct demi_monitor *demi_monitor_ref(struct demi_monitor *dm)
 {
     if (!dm) {
+        return NULL;
+    }
+
+    dm->ref++;
+    return dm;
+}
+
+void demi_monitor_unref(struct demi_monitor *dm)
+{
+    if (!dm) {
+        return;
+    }
+
+    if (--dm->ref > 0) {
         return;
     }
 

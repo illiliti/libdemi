@@ -40,8 +40,9 @@ enum demi_action {
     // DEMI_ACTION_LEASE,
 };
 
-struct demi *demi_init(void);
-void demi_deinit(struct demi *);
+struct demi *demi_new(void);
+struct demi *demi_ref(struct demi *);
+void demi_unref(struct demi *);
 
 int demi_device_get_devnode(struct demi_device *, const char **);
 int demi_device_get_devname(struct demi_device *, const char **);
@@ -53,20 +54,23 @@ int demi_device_get_class(struct demi_device *, enum demi_class *);
 int demi_device_get_type(struct demi_device *, enum demi_type *);
 int demi_device_get_seat(struct demi_device *, const char **);
 
-struct demi_device *demi_device_init_devnode(struct demi *, const char *);
-struct demi_device *demi_device_init_devnum(struct demi *, dev_t, mode_t);
-void demi_device_deinit(struct demi_device *);
+struct demi_device *demi_device_new_devnode(struct demi *, const char *);
+struct demi_device *demi_device_new_devnum(struct demi *, dev_t, mode_t);
+struct demi_device *demi_device_ref(struct demi_device *);
+void demi_device_unref(struct demi_device *);
 
 int demi_monitor_get_fd(struct demi_monitor *);
 struct demi_device *demi_monitor_recv_device(struct demi_monitor *);
 
-struct demi_monitor *demi_monitor_init(struct demi *);
-void demi_monitor_deinit(struct demi_monitor *);
+struct demi_monitor *demi_monitor_new(struct demi *);
+struct demi_monitor *demi_monitor_ref(struct demi_monitor *);
+void demi_monitor_unref(struct demi_monitor *);
 
 int demi_enumerate_scan_system(struct demi_enumerate *,
         int (*)(struct demi_device *, void *), void *);
 
-struct demi_enumerate *demi_enumerate_init(struct demi *);
-void demi_enumerate_deinit(struct demi_enumerate *);
+struct demi_enumerate *demi_enumerate_new(struct demi *);
+struct demi_enumerate *demi_enumerate_ref(struct demi_enumerate *);
+void demi_enumerate_unref(struct demi_enumerate *);
 
 #endif

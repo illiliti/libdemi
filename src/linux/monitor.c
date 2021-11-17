@@ -40,10 +40,10 @@ struct demi_device *demi_monitor_recv_device(struct demi_monitor *dm)
         return NULL;
     }
 
-    return device_init_uevent(dm->ctx, buf, len);
+    return device_new_uevent(dm->ctx, buf, len);
 }
 
-struct demi_monitor *demi_monitor_init(struct demi *ctx)
+struct demi_monitor *demi_monitor_new(struct demi *ctx)
 {
     struct sockaddr_nl sa = {0};
     struct demi_monitor *dm;
@@ -76,12 +76,27 @@ struct demi_monitor *demi_monitor_init(struct demi *ctx)
     }
 
     dm->ctx = ctx;
+    dm->ref = 1;
     return dm;
 }
 
-void demi_monitor_deinit(struct demi_monitor *dm)
+struct demi_monitor *demi_monitor_ref(struct demi_monitor *dm)
 {
     if (!dm) {
+        return NULL;
+    }
+
+    dm->ref++;
+    return dm;
+}
+
+void demi_monitor_unref(struct demi_monitor *dm)
+{
+    if (!dm) {
+        return;
+    }
+
+    if (--dm->ref > 0) {
         return;
     }
 

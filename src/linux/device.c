@@ -17,7 +17,8 @@ int demi_device_get_devnode(struct demi_device *dd, const char **devnode)
     size_t len;
 
     if (!dd || !devnode) {
-        return -EINVAL;
+        errno = EINVAL;
+        return -1;
     }
 
     if (dd->devnode) {
@@ -26,7 +27,8 @@ int demi_device_get_devnode(struct demi_device *dd, const char **devnode)
     }
 
     if (!dd->devname) {
-        return -ENOENT;
+        errno = ENOENT;
+        return -1;
     }
 
     len = 5 + strlen(dd->devname) + 1;
@@ -45,11 +47,13 @@ int demi_device_get_devnode(struct demi_device *dd, const char **devnode)
 int demi_device_get_devname(struct demi_device *dd, const char **devname)
 {
     if (!dd || !devname) {
-        return -EINVAL;
+        errno = EINVAL;
+        return -1;
     }
 
     if (!dd->devname) {
-        return -ENOENT;
+        errno = ENOENT;
+        return -1;
     }
 
     *devname = dd->devname;
@@ -59,11 +63,13 @@ int demi_device_get_devname(struct demi_device *dd, const char **devname)
 int demi_device_get_devnum(struct demi_device *dd, dev_t *devnum)
 {
     if (!dd || !devnum) {
-        return -EINVAL;
+        errno = EINVAL;
+        return -1;
     }
 
     if (dd->major == -1 || dd->minor == -1) {
-        return -ENOENT;
+        errno = ENOENT;
+        return -1;
     }
 
     *devnum = makedev(dd->major, dd->minor);
@@ -72,10 +78,11 @@ int demi_device_get_devnum(struct demi_device *dd, dev_t *devnum)
 
 int demi_device_get_devunit(struct demi_device *dd, uint32_t *devunit)
 {
-    int i;
+    size_t i;
 
     if (!dd || !devunit) {
-        return -EINVAL;
+        errno = EINVAL;
+        return -1;
     }
 
     if (dd->devunit != -1) {
@@ -84,37 +91,43 @@ int demi_device_get_devunit(struct demi_device *dd, uint32_t *devunit)
     }
 
     if (!dd->devname) {
-        return -ENOENT;
+        errno = ENOENT;
+        return -1;
     }
 
     for (i = 0; dd->devname[i] != '\0'; i++) {
         if (dd->devname[i] >= '0' && dd->devname[i] <= '9') {
-            dd->devunit = strtol(dd->devname + i, NULL, 10);
+            dd->devunit = (int32_t)strtol(dd->devname + i, NULL, 10);
             *devunit = dd->devunit;
             return 0;
         }
     }
 
-    return -ENOENT;
+    errno = ENOENT;
+    return -1;
 }
 
 int demi_device_get_seat(struct demi_device *dd, const char **seat)
 {
     if (!dd || !seat) {
-        return -EINVAL;
+        errno = EINVAL;
+        return -1;
     }
 
-    return -ENOTSUP;
+    errno = ENOTSUP;
+    return -1;
 }
 
 int demi_device_get_action(struct demi_device *dd, enum demi_action *action)
 {
     if (!dd || !action) {
-        return -EINVAL;
+        errno = EINVAL;
+        return -1;
     }
 
     if (!dd->action) {
-        return -ENOENT;
+        errno = ENOENT;
+        return -1;
     }
 
     *action = dd->action;
@@ -124,7 +137,8 @@ int demi_device_get_action(struct demi_device *dd, enum demi_action *action)
 int demi_device_get_class(struct demi_device *dd, enum demi_class *class)
 {
     if (!dd || !class) {
-        return -EINVAL;
+        errno = EINVAL;
+        return -1;
     }
 
     if (dd->class) {
@@ -133,7 +147,8 @@ int demi_device_get_class(struct demi_device *dd, enum demi_class *class)
     }
 
     if (!dd->subsystem) {
-        return -ENOENT;
+        errno = ENOENT;
+        return -1;
     }
 
     // TODO lookup table
@@ -154,10 +169,10 @@ int demi_device_get_class(struct demi_device *dd, enum demi_class *class)
 int demi_device_get_type(struct demi_device *dd, enum demi_type *type)
 {
     enum demi_class class;
-    int ret;
 
     if (!dd || !type) {
-        return -EINVAL;
+        errno = EINVAL;
+        return -1;
     }
 
     if (dd->type) {
@@ -165,10 +180,8 @@ int demi_device_get_type(struct demi_device *dd, enum demi_type *type)
         return 0;
     } 
 
-    ret = demi_device_get_class(dd, &class);
-
-    if (ret < 0) {
-        return ret;
+    if (demi_device_get_class(dd, &class) == -1) {
+        return -1;
     }
     else if (class == DEMI_CLASS_INPUT) {
         dd->type = parse_evdev(&dd->evdev);
@@ -209,6 +222,9 @@ static inline int parse_var(struct demi_device *dd, const char *line)
             return -1;
         }
 
+        // XXX
+        // snprintf(dd->parent_uevent, 4 + len + 6 + 1, "/sys/%.*s/uevent", (int)len, line);
+
         // /sys
         memcpy(dd->parent_uevent, "/sys", 4);
         // /sys/devices/pci0000:00/0000:00:14.0/usb1/1-2/1-2:1.0/0003:093A:2521.0021/input/input47/
@@ -225,10 +241,10 @@ static inline int parse_var(struct demi_device *dd, const char *line)
         return dd->subsystem ? 0 : -1;
     }
     else if (strncmp(line, "MAJOR=", 6) == 0) {
-        dd->major = strtol(line + 6, NULL, 10);
+        dd->major = (int32_t)strtol(line + 6, NULL, 10);
     }
     else if (strncmp(line, "MINOR=", 6) == 0) {
-        dd->minor = strtol(line + 6, NULL, 10);
+        dd->minor = (int32_t)strtol(line + 6, NULL, 10);
     }
     else if (strncmp(line, "EV=", 3) == 0) {
         parse_mask(dd->evdev.ev, line + 3);
@@ -296,7 +312,7 @@ static int read_uevent(struct demi_device *dd, int dfd, const char *uevent)
     return 0;
 }
 
-struct demi_device *device_init_uevent(struct demi *ctx, const char *buf,
+struct demi_device *device_new_uevent(struct demi *ctx, const char *buf,
         size_t len)
 {
     struct demi_device *dd;
@@ -315,7 +331,7 @@ struct demi_device *device_init_uevent(struct demi *ctx, const char *buf,
 
     for (end = buf + len; buf < end; buf += strlen(buf) + 1) {
         if (parse_var(dd, buf) == -1) {
-            demi_device_deinit(dd);
+            demi_device_unref(dd);
             return NULL;
         }
     }
@@ -323,13 +339,13 @@ struct demi_device *device_init_uevent(struct demi *ctx, const char *buf,
     if (demi_device_get_class(dd, &class) == 0 && class == DEMI_CLASS_INPUT) {
         // TODO document why we can't use fd
         if (read_uevent(dd, -1, dd->parent_uevent) == -1) {
-            demi_device_deinit(dd);
+            demi_device_unref(dd);
             return NULL;
         }
     }
 
-    free(dd->parent_uevent);
     dd->ctx = ctx;
+    dd->ref = 1;
     return dd;
 }
 
@@ -380,7 +396,7 @@ static int read_boot_vga(struct demi_device *dd, int dfd)
     return 0;
 }
 
-struct demi_device *device_init_syspath(struct demi *ctx, int bfd,
+struct demi_device *device_new_syspath(struct demi *ctx, int bfd,
 		const char *syspath)
 {
     struct demi_device *dd;
@@ -407,7 +423,7 @@ struct demi_device *device_init_syspath(struct demi *ctx, int bfd,
     if (read_uevent(dd, dfd, "uevent") == -1 ||
         read_subsystem(dd, dfd) == -1) {
         close(dfd);
-        demi_device_deinit(dd);
+        demi_device_unref(dd);
         return NULL;
     }
 
@@ -416,7 +432,7 @@ struct demi_device *device_init_syspath(struct demi *ctx, int bfd,
         case DEMI_CLASS_DRM:
             if (read_boot_vga(dd, dfd) == -1) {
                 close(dfd);
-                demi_device_deinit(dd);
+                demi_device_unref(dd);
                 return NULL;
             }
 
@@ -424,7 +440,7 @@ struct demi_device *device_init_syspath(struct demi *ctx, int bfd,
         case DEMI_CLASS_INPUT:
             if (read_uevent(dd, dfd, "device/uevent") == -1) {
                 close(dfd);
-                demi_device_deinit(dd);
+                demi_device_unref(dd);
                 return NULL;
             }
 
@@ -436,10 +452,11 @@ struct demi_device *device_init_syspath(struct demi *ctx, int bfd,
 
     close(dfd);
     dd->ctx = ctx;
+    dd->ref = 1;
     return dd;
 }
 
-struct demi_device *demi_device_init_devnum(struct demi *ctx, dev_t devnum,
+struct demi_device *demi_device_new_devnum(struct demi *ctx, dev_t devnum,
         mode_t type)
 {
     char syspath[48];
@@ -461,10 +478,10 @@ struct demi_device *demi_device_init_devnum(struct demi *ctx, dev_t devnum,
         return NULL;
     }
 
-    return device_init_syspath(ctx, -1, syspath);
+    return device_new_syspath(ctx, -1, syspath);
 }
 
-struct demi_device *demi_device_init_devnode(struct demi *ctx,
+struct demi_device *demi_device_new_devnode(struct demi *ctx,
         const char *devnode)
 {
     struct stat st;
@@ -477,15 +494,30 @@ struct demi_device *demi_device_init_devnode(struct demi *ctx,
         return NULL;
     }
 
-    return demi_device_init_devnum(ctx, st.st_rdev, st.st_mode);
+    return demi_device_new_devnum(ctx, st.st_rdev, st.st_mode);
 }
 
-void demi_device_deinit(struct demi_device *dd)
+struct demi_device *demi_device_ref(struct demi_device *dd)
+{
+    if (!dd) {
+        return NULL;
+    }
+
+    dd->ref++;
+    return dd;
+}
+
+void demi_device_unref(struct demi_device *dd)
 {
     if (!dd) {
         return;
     }
 
+    if (--dd->ref > 0) {
+        return;
+    }
+
+    free(dd->parent_uevent);
     free(dd->subsystem);
     free(dd->devnode);
     free(dd->devname);

@@ -4,7 +4,7 @@
 #include "demi.h"
 #include "udev.h"
 
-struct demi *demi_init(void)
+struct demi *demi_new(void)
 {
     struct demi *ctx;
 
@@ -21,12 +21,27 @@ struct demi *demi_init(void)
         return NULL;
     }
 
+    ctx->ref = 1;
     return ctx;
 }
 
-void demi_deinit(struct demi *ctx)
+struct demi *demi_ref(struct demi *ctx)
 {
     if (!ctx) {
+        return NULL;
+    }
+
+    ctx->ref++;
+    return ctx;
+}
+
+void demi_unref(struct demi *ctx)
+{
+    if (!ctx) {
+        return;
+    }
+
+    if (--ctx->ref > 0) {
         return;
     }
     

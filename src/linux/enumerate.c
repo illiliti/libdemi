@@ -26,7 +26,7 @@ static int scan_system(struct demi_enumerate *de, const char *path,
             continue;
         }
 
-        dd = device_init_syspath(de->ctx, dfd, dt->d_name);
+        dd = device_new_syspath(de->ctx, dfd, dt->d_name);
 
         // XXX continue?
         if (!dd) {
@@ -63,7 +63,7 @@ int demi_enumerate_scan_system(struct demi_enumerate *de,
     return 0;
 }
 
-struct demi_enumerate *demi_enumerate_init(struct demi *ctx)
+struct demi_enumerate *demi_enumerate_new(struct demi *ctx)
 {
     struct demi_enumerate *de;
 
@@ -78,10 +78,29 @@ struct demi_enumerate *demi_enumerate_init(struct demi *ctx)
     }
 
     de->ctx = ctx;
+    de->ref = 1;
     return de;
 }
 
-void demi_enumerate_deinit(struct demi_enumerate *de)
+struct demi_enumerate *demi_enumerate_ref(struct demi_enumerate *de)
 {
+    if (!de) {
+        return NULL;
+    }
+
+    de->ref++;
+    return de;
+}
+
+void demi_enumerate_unref(struct demi_enumerate *de)
+{
+    if (!de) {
+        return;
+    }
+
+    if (--de->ref > 0) {
+        return;
+    }
+
     free(de);
 }
