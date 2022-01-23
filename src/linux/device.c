@@ -317,6 +317,11 @@ int device_init_uevent(struct demi_device *dd, struct demi *ctx,
     dd->minor = -1;
     dd->devunit = -1;
 
+    // add@/devices/pci0000:00/0000:00:14.0/usb1/1-1/1-1:1.0/0003:093A:2521.0002/input/input16\0
+    // ACTION=add\0
+    // DEVPATH=/devices/pci0000:00/0000:00:14.0/usb1/1-1/1-1:1.0/0003:093A:2521.0002/input/input16\0
+    // SUBSYSTEM=input\0
+    // ...
     for (end = buf + len; buf < end; buf += strlen(buf) + 1) {
         if (parse_var(dd, &evdev, buf) == -1) {
             return -1;
