@@ -7,8 +7,8 @@
 #include <sys/stat.h>
 
 #include "demi.h"
-#include "netbsd.h"
 #include "wscons.h"
+#include "device.h"
 
 int demi_device_get_devname(struct demi_device *dd, const char **devname)
 {
@@ -246,18 +246,13 @@ int demi_device_get_type(struct demi_device *dd, enum demi_type *type)
     return 0;
 }
 
-struct demi_device *device_new(struct demi *ctx, const char *devnode,
-        const char *devname, dev_t devnum, mode_t type,
+int device_init(struct demi_device *dd, struct demi *ctx,
+        const char *devnode, const char *devname, dev_t devnum, mode_t type,
         enum demi_action action)
 {
-    struct demi_device *dd;
+    memset(dd, 0, sizeof(*dd));
 
-    dd = calloc(1, sizeof(*dd));
-
-    if (!dd) {
-        return NULL;
-    }
-
+    dd->ctx = ctx;
     dd->action = action;
     dd->devnum = devnum;
     dd->devtype = type;
@@ -267,8 +262,7 @@ struct demi_device *device_new(struct demi *ctx, const char *devnode,
         dd->devname = strdup(devname);
 
         if (!dd->devname) {
-            free(dd);
-            return NULL;
+            return -1;
         }
     }
 
@@ -277,65 +271,47 @@ struct demi_device *device_new(struct demi *ctx, const char *devnode,
 
         if (!dd->devnode) {
             free(dd->devname);
-            free(dd);
-            return NULL;
+            return -1;
         }
     }
 
-    dd->ctx = ctx;
-    dd->ref = 1;
-    return dd;
+    return 0;
 }
 
-struct demi_device *demi_device_new_devnode(struct demi *ctx,
+int demi_device_init_devnode(struct demi_device *dd, struct demi *ctx,
         const char *devnode)
 {
-    if (!ctx || !devnode) {
-        return NULL;
+    if (!dd || !ctx || !devnode) {
+        return -1;
     }
 
     if (strncmp(devnode, "/dev/", 5) != 0) {
-        return NULL;
+        return -1;
     }
 
-    return device_new(ctx, devnode, devnode + 5, 0, 0, 0);
+    return device_init(dd, ctx, devnode, devnode + 5, 0, 0, 0);
 }
 
-struct demi_device *demi_device_new_devnum(struct demi *ctx, dev_t devnum,
-        mode_t type)
+int demi_device_init_devnum(struct demi_device *dd, struct demi *ctx,
+        dev_t devnum, mode_t type)
 {
-    if (!ctx) {
-        return NULL;
+    if (!dd || !ctx) {
+        return -1;
     }
 
     if (!S_ISCHR(type) && !S_ISBLK(type)) {
-        return NULL;
+        return -1;
     }
 
-    return device_new(ctx, NULL, NULL, devnum, type, 0);
+    return device_init(dd, ctx, NULL, NULL, devnum, type, 0);
 }
 
-struct demi_device *demi_device_ref(struct demi_device *dd)
+void demi_device_finish(struct demi_device *dd)
 {
     if (!dd) {
-        return NULL;
-    }
-
-    dd->ref++;
-    return dd;
-}
-
-void demi_device_unref(struct demi_device *dd)
-{
-    if (!dd) {
-        return;
-    }
-
-    if (--dd->ref > 0) {
         return;
     }
 
     free(dd->devnode);
     free(dd->devname);
-    free(dd);
 }

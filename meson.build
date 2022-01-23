@@ -32,6 +32,7 @@ add_project_arguments(cc.get_supported_arguments([
 )
 
 demi_src = []
+demi_inc = []
 demi_dep = []
 
 subdir('src')
@@ -41,7 +42,7 @@ demi_sym = 'libdemi.sym'
 demi_lib = library(
   meson.project_name(),
   demi_src,
-  include_directories: include_directories('include'),
+  include_directories: demi_inc,
   dependencies: demi_dep,
   version: meson.project_version(),
   link_args: '-Wl,--version-script,' + meson.current_source_dir() / demi_sym,
@@ -52,6 +53,7 @@ demi_lib = library(
 pkgconfig = import('pkgconfig')
 pkgconfig.generate(
   demi_lib,
+  subdirs: meson.project_name(),
   url: 'https://github.com/illiliti/libdemi',
   description: 'Device enumeration, monitoring and introspecting library',
 )

@@ -1,12 +1,11 @@
 #include <unistd.h>
-#include <stdlib.h>
 #include <sys/socket.h>
 #include <linux/netlink.h>
 
 #include "demi.h"
-#include "linux.h"
+#include "device.h"
 
-struct demi_device *demi_monitor_recv_device(struct demi_monitor *dm)
+int demi_monitor_recv_device(struct demi_monitor *dm, struct demi_device *dd)
 {
     struct sockaddr_nl sa = {0};
     struct msghdr hdr = {0};
@@ -14,8 +13,8 @@ struct demi_device *demi_monitor_recv_device(struct demi_monitor *dm)
     char buf[8192];
     ssize_t len;
 
-    if (!dm) {
-        return NULL;
+    if (!dm || !dd) {
+        return -1;
     }
 
     iov.iov_base = buf;
@@ -29,41 +28,33 @@ struct demi_device *demi_monitor_recv_device(struct demi_monitor *dm)
     len = recvmsg(dm->fd, &hdr, 0);
 
     if (len <= 0) {
-        return NULL;
+        return -1;
     }
 
     if (hdr.msg_flags & MSG_TRUNC) {
-        return NULL;
+        return -1;
     }
 
     if (sa.nl_groups == 0x0 || (sa.nl_groups == 0x1 && sa.nl_pid != 0)) {
-        return NULL;
+        return -1;
     }
 
-    return device_new_uevent(dm->ctx, buf, len);
+    return device_init_uevent(dd, dm->ctx, buf, len);
 }
 
-struct demi_monitor *demi_monitor_new(struct demi *ctx)
+int demi_monitor_init(struct demi_monitor *dm, struct demi *ctx)
 {
     struct sockaddr_nl sa = {0};
-    struct demi_monitor *dm;
 
-    if (!ctx) {
-        return NULL;
-    }
-
-    dm = malloc(sizeof(*dm));
-
-    if (!dm) {
-        return NULL;
+    if (!dm || !ctx) {
+        return -1;
     }
 
     dm->fd = socket(AF_NETLINK, SOCK_DGRAM | SOCK_CLOEXEC | SOCK_NONBLOCK,
             NETLINK_KOBJECT_UEVENT);
 
     if (dm->fd == -1) {
-        free(dm);
-        return NULL;
+        return -1;
     }
 
     sa.nl_family = AF_NETLINK;
@@ -71,37 +62,20 @@ struct demi_monitor *demi_monitor_new(struct demi *ctx)
 
     if (bind(dm->fd, (struct sockaddr *)&sa, sizeof(sa)) == -1) {
         close(dm->fd);
-        free(dm);
-        return NULL;
+        return -1;
     }
 
     dm->ctx = ctx;
-    dm->ref = 1;
-    return dm;
+    return 0;
 }
 
-struct demi_monitor *demi_monitor_ref(struct demi_monitor *dm)
+void demi_monitor_finish(struct demi_monitor *dm)
 {
     if (!dm) {
-        return NULL;
-    }
-
-    dm->ref++;
-    return dm;
-}
-
-void demi_monitor_unref(struct demi_monitor *dm)
-{
-    if (!dm) {
-        return;
-    }
-
-    if (--dm->ref > 0) {
         return;
     }
 
     close(dm->fd);
-    free(dm);
 }
 
 int demi_monitor_get_fd(struct demi_monitor *dm)

@@ -10,7 +10,8 @@
 #include <sys/sysmacros.h>
 
 #include "demi.h"
-#include "linux.h"
+#include "evdev.h"
+#include "device.h"
 
 int demi_device_get_devnode(struct demi_device *dd, const char **devnode)
 {
@@ -168,8 +169,6 @@ int demi_device_get_class(struct demi_device *dd, enum demi_class *class)
 
 int demi_device_get_type(struct demi_device *dd, enum demi_type *type)
 {
-    enum demi_class class;
-
     if (!dd || !type) {
         errno = EINVAL;
         return -1;
@@ -180,17 +179,7 @@ int demi_device_get_type(struct demi_device *dd, enum demi_type *type)
         return 0;
     } 
 
-    if (demi_device_get_class(dd, &class) == -1) {
-        return -1;
-    }
-    else if (class == DEMI_CLASS_INPUT) {
-        dd->type = parse_evdev(&dd->evdev);
-    }
-    else {
-        dd->type = DEMI_TYPE_UNKNOWN;
-    }
-
-    *type = dd->type;
+    *type = DEMI_TYPE_UNKNOWN;
     return 0;
 }
 
@@ -207,7 +196,8 @@ static inline void parse_mask(unsigned long *arr, const char *str)
     arr[i] = strtoul(str, NULL, 16);
 }
 
-static inline int parse_var(struct demi_device *dd, const char *line)
+static inline int parse_var(struct demi_device *dd, struct evdev *evdev,
+        const char *line)
 {
     size_t len;
 
@@ -247,19 +237,19 @@ static inline int parse_var(struct demi_device *dd, const char *line)
         dd->minor = (int32_t)strtol(line + 6, NULL, 10);
     }
     else if (strncmp(line, "EV=", 3) == 0) {
-        parse_mask(dd->evdev.ev, line + 3);
+        parse_mask(evdev->ev, line + 3);
     }
     else if (strncmp(line, "KEY=", 4) == 0) {
-        parse_mask(dd->evdev.key, line + 4);
+        parse_mask(evdev->key, line + 4);
     }
     else if (strncmp(line, "REL=", 4) == 0) {
-        parse_mask(dd->evdev.rel, line + 4);
+        parse_mask(evdev->rel, line + 4);
     }
     else if (strncmp(line, "ABS=", 4) == 0) {
-        parse_mask(dd->evdev.abs, line + 4);
+        parse_mask(evdev->abs, line + 4);
     }
     else if (strncmp(line, "PROP=", 5) == 0) {
-        parse_mask(dd->evdev.prop, line + 5);
+        parse_mask(evdev->prop, line + 5);
     }
     else if (strncmp(line, "ACTION=", 7) != 0) {
         return 0;
@@ -280,7 +270,8 @@ static inline int parse_var(struct demi_device *dd, const char *line)
     return 0;
 }
 
-static int read_uevent(struct demi_device *dd, int dfd, const char *uevent)
+static int read_uevent(struct demi_device *dd, struct evdev *evdev, int dfd,
+        const char *uevent)
 {
     char line[LINE_MAX];
     FILE *fp;
@@ -302,7 +293,7 @@ static int read_uevent(struct demi_device *dd, int dfd, const char *uevent)
     while (fgets(line, sizeof(line), fp)) {
         line[strlen(line) - 1] = '\0';
 
-        if (parse_var(dd, line) == -1) {
+        if (parse_var(dd, evdev, line) == -1) {
             fclose(fp);
             return -1;
         }
@@ -312,41 +303,36 @@ static int read_uevent(struct demi_device *dd, int dfd, const char *uevent)
     return 0;
 }
 
-struct demi_device *device_new_uevent(struct demi *ctx, const char *buf,
-        size_t len)
+int device_init_uevent(struct demi_device *dd, struct demi *ctx,
+        const char *buf, size_t len)
 {
-    struct demi_device *dd;
+    struct evdev evdev = {0};
     enum demi_class class;
     const char *end;
 
-    dd = calloc(1, sizeof(*dd));
+    memset(dd, 0, sizeof(*dd));
 
-    if (!dd) {
-        return NULL;
-    }
-
+    dd->ctx = ctx;
     dd->major = -1;
     dd->minor = -1;
     dd->devunit = -1;
 
     for (end = buf + len; buf < end; buf += strlen(buf) + 1) {
-        if (parse_var(dd, buf) == -1) {
-            demi_device_unref(dd);
-            return NULL;
+        if (parse_var(dd, &evdev, buf) == -1) {
+            return -1;
         }
     }
 
     if (demi_device_get_class(dd, &class) == 0 && class == DEMI_CLASS_INPUT) {
         // TODO document why we can't use fd
-        if (read_uevent(dd, -1, dd->parent_uevent) == -1) {
-            demi_device_unref(dd);
-            return NULL;
+        if (read_uevent(dd, &evdev, -1, dd->parent_uevent) == -1) {
+            return -1;
         }
+
+        dd->type = parse_evdev(&evdev);
     }
 
-    dd->ctx = ctx;
-    dd->ref = 1;
-    return dd;
+    return 0;
 }
 
 static int read_subsystem(struct demi_device *dd, int dfd)
@@ -396,35 +382,30 @@ static int read_boot_vga(struct demi_device *dd, int dfd)
     return 0;
 }
 
-struct demi_device *device_new_syspath(struct demi *ctx, int bfd,
-		const char *syspath)
+int device_init_syspath(struct demi_device *dd, struct demi *ctx, int bfd,
+        const char *syspath)
 {
-    struct demi_device *dd;
+    struct evdev evdev = {0};
     enum demi_class class;
     int dfd;
 
     dfd = openat(bfd, syspath, O_DIRECTORY | O_PATH | O_CLOEXEC);
 
     if (dfd == -1) {
-        return NULL;
+        return -1;
     }
 
-    dd = calloc(1, sizeof(*dd));
+    memset(dd, 0, sizeof(*dd));
 
-    if (!dd) {
-        close(dfd);
-        return NULL;
-    }
-
+    dd->ctx = ctx;
     dd->major = -1;
     dd->minor = -1;
     dd->devunit = -1;
 
-    if (read_uevent(dd, dfd, "uevent") == -1 ||
+    if (read_uevent(dd, &evdev, dfd, "uevent") == -1 ||
         read_subsystem(dd, dfd) == -1) {
         close(dfd);
-        demi_device_unref(dd);
-        return NULL;
+        return -1;
     }
 
     if (demi_device_get_class(dd, &class) == 0) {
@@ -432,18 +413,17 @@ struct demi_device *device_new_syspath(struct demi *ctx, int bfd,
         case DEMI_CLASS_DRM:
             if (read_boot_vga(dd, dfd) == -1) {
                 close(dfd);
-                demi_device_unref(dd);
-                return NULL;
+                return -1;
             }
 
             break;
         case DEMI_CLASS_INPUT:
-            if (read_uevent(dd, dfd, "device/uevent") == -1) {
+            if (read_uevent(dd, &evdev, dfd, "device/uevent") == -1) {
                 close(dfd);
-                demi_device_unref(dd);
-                return NULL;
+                return -1;
             }
 
+            dd->type = parse_evdev(&evdev);
             break;
         default:
             break;
@@ -451,18 +431,16 @@ struct demi_device *device_new_syspath(struct demi *ctx, int bfd,
     }
 
     close(dfd);
-    dd->ctx = ctx;
-    dd->ref = 1;
-    return dd;
+    return 0;
 }
 
-struct demi_device *demi_device_new_devnum(struct demi *ctx, dev_t devnum,
-        mode_t type)
+int demi_device_init_devnum(struct demi_device *dd, struct demi *ctx,
+        dev_t devnum, mode_t type)
 {
     char syspath[48];
 
-    if (!ctx) {
-        return NULL;
+    if (!dd || !ctx) {
+        return -1;
     }
 
     switch (type & (S_IFCHR | S_IFBLK)) {
@@ -475,45 +453,31 @@ struct demi_device *demi_device_new_devnum(struct demi *ctx, dev_t devnum,
                 major(devnum), minor(devnum));
         break;
     default:
-        return NULL;
+        return -1;
     }
 
-    return device_new_syspath(ctx, -1, syspath);
+    return device_init_syspath(dd, ctx, -1, syspath);
 }
 
-struct demi_device *demi_device_new_devnode(struct demi *ctx,
+int demi_device_init_devnode(struct demi_device *dd, struct demi *ctx,
         const char *devnode)
 {
     struct stat st;
 
-    if (!ctx || !devnode) {
-        return NULL;
+    if (!dd || !ctx || !devnode) {
+        return -1;
     }
 
     if (stat(devnode, &st) == -1) {
-        return NULL;
+        return -1;
     }
 
-    return demi_device_new_devnum(ctx, st.st_rdev, st.st_mode);
+    return demi_device_init_devnum(dd, ctx, st.st_rdev, st.st_mode);
 }
 
-struct demi_device *demi_device_ref(struct demi_device *dd)
+void demi_device_finish(struct demi_device *dd)
 {
     if (!dd) {
-        return NULL;
-    }
-
-    dd->ref++;
-    return dd;
-}
-
-void demi_device_unref(struct demi_device *dd)
-{
-    if (!dd) {
-        return;
-    }
-
-    if (--dd->ref > 0) {
         return;
     }
 
@@ -521,5 +485,4 @@ void demi_device_unref(struct demi_device *dd)
     free(dd->subsystem);
     free(dd->devnode);
     free(dd->devname);
-    free(dd);
 }

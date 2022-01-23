@@ -1,52 +1,24 @@
 #include <fcntl.h>
-#include <stdlib.h>
 #include <unistd.h>
 #include <sys/drvctlio.h>
 
 #include "demi.h"
-#include "netbsd.h"
 
-struct demi *demi_new(void)
+int demi_init(struct demi *ctx)
 {
-    struct demi *ctx;
-
-    ctx = malloc(sizeof(*ctx));
-
     if (!ctx) {
-        return NULL;
+        return -1;
     }
 
     ctx->fd = open(DRVCTLDEV, O_RDWR | O_CLOEXEC | O_NONBLOCK);
-
-    if (ctx->fd == -1) {
-        free(ctx);
-        return NULL;
-    }
-
-    ctx->ref = 1;
-    return ctx;
+    return ctx->fd == -1 ? -1 : 0;
 }
 
-struct demi *demi_ref(struct demi *ctx)
+void demi_finish(struct demi *ctx)
 {
     if (!ctx) {
-        return NULL;
-    }
-
-    ctx->ref++;
-    return ctx;
-}
-
-void demi_unref(struct demi *ctx)
-{
-    if (!ctx) {
-        return;
-    }
-
-    if (--ctx->ref > 0) {
         return;
     }
 
     close(ctx->fd);
-    free(ctx);
 }

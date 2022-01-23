@@ -1,88 +1,58 @@
-#include <stdlib.h>
 #include <libudev.h>
 
 #include "demi.h"
-#include "udev.h"
+#include "device.h"
 
-struct demi_device *demi_monitor_recv_device(struct demi_monitor *dm)
+int demi_monitor_recv_device(struct demi_monitor *dm, struct demi_device *dd)
 {
     struct udev_device *udev_device;
-    struct demi_device *dd;
 
-    if (!dm) {
-        return NULL;
+    if (!dm || !dd) {
+        return -1;
     }
 
     udev_device = udev_monitor_receive_device(dm->udev_monitor);
 
     if (!udev_device) {
-        return NULL;
+        return -1;
     }
 
-    dd = device_new(dm->ctx, udev_device);
-
-    if (!dd) {
+    if (device_init(dd, dm->ctx, udev_device) == -1) {
         udev_device_unref(udev_device);
-        return NULL;
+        return -1;
     }
 
-    return dd;
+    return 0;
 }
 
-struct demi_monitor *demi_monitor_new(struct demi *ctx)
+int demi_monitor_init(struct demi_monitor *dm, struct demi *ctx)
 {
-    struct demi_monitor *dm;
-
-    if (!ctx) {
-        return NULL;
-    }
-
-    dm = malloc(sizeof(*dm));
-
-    if (!dm) {
-        return NULL;
+    if (!dm || !ctx) {
+        return -1;
     }
 
     dm->udev_monitor = udev_monitor_new_from_netlink(ctx->udev, "udev");
 
     if (!dm->udev_monitor) {
-        free(dm);
-        return NULL;
+        return -1;
     }
 
     if (udev_monitor_enable_receiving(dm->udev_monitor) < 0) {
         udev_monitor_unref(dm->udev_monitor);
-        free(dm);
-        return NULL;
+        return -1;
     }
 
     dm->ctx = ctx;
-    dm->ref = 1;
-    return dm;
+    return 0;
 }
 
-struct demi_monitor *demi_monitor_ref(struct demi_monitor *dm)
+void demi_monitor_finish(struct demi_monitor *dm)
 {
     if (!dm) {
-        return NULL;
-    }
-
-    dm->ref++;
-    return dm;
-}
-
-void demi_monitor_unref(struct demi_monitor *dm)
-{
-    if (!dm) {
-        return;
-    }
-
-    if (--dm->ref > 0) {
         return;
     }
 
     udev_monitor_unref(dm->udev_monitor);
-    free(dm);
 }
 
 int demi_monitor_get_fd(struct demi_monitor *dm)

@@ -7,7 +7,7 @@
 #include <sys/sysmacros.h>
 
 #include "demi.h"
-#include "udev.h"
+#include "device.h"
 
 static const struct {
     const char *prop;
@@ -255,31 +255,23 @@ int demi_device_get_type(struct demi_device *dd, enum demi_type *type)
     return 0;
 }
 
-struct demi_device *device_new(struct demi *ctx,
+int device_init(struct demi_device *dd, struct demi *ctx,
         struct udev_device *udev_device)
 {
-    struct demi_device *dd;
-
-    dd = calloc(1, sizeof(*dd));
-
-    if (!dd) {
-        return NULL;
-    }
+    memset(dd, 0, sizeof(*dd));
 
     dd->udev_device = udev_device;
     dd->ctx = ctx;
-    dd->ref = 1;
-    return dd;
+    return 0;
 }
 
-struct demi_device *demi_device_new_devnum(struct demi *ctx, dev_t devnum,
+int demi_device_init_devnum(struct demi_device *dd, struct demi *ctx, dev_t devnum,
         mode_t type)
 {
     struct udev_device *udev_device;
-    struct demi_device *dd;
 
-    if (!ctx) {
-        return NULL;
+    if (!dd || !ctx) {
+        return -1;
     }
 
     switch (type & (S_IFCHR | S_IFBLK)) {
@@ -290,59 +282,42 @@ struct demi_device *demi_device_new_devnum(struct demi *ctx, dev_t devnum,
         udev_device = udev_device_new_from_devnum(ctx->udev, 'b', devnum);
         break;
     default:
-        return NULL;
+        return -1;
     }
 
     if (!udev_device) {
-        return NULL;
+        return -1;
     }
 
-    dd = device_new(ctx, udev_device);
-
-    if (!dd) {
+    if (device_init(dd, ctx, udev_device) == -1) {
         udev_device_unref(udev_device);
-        return NULL;
+        return -1;
     }
 
-    return dd;
+    return 0;
 }
 
-struct demi_device *demi_device_new_devnode(struct demi *ctx,
+int demi_device_init_devnode(struct demi_device *dd, struct demi *ctx,
         const char *devnode)
 {
     struct stat st;
 
-    if (!ctx || !devnode) {
-        return NULL;
+    if (!dd || !ctx || !devnode) {
+        return -1;
     }
 
     if (stat(devnode, &st) == -1) {
-        return NULL;
+        return -1;
     }
 
-    return demi_device_new_devnum(ctx, st.st_rdev, st.st_mode);
+    return demi_device_init_devnum(dd, ctx, st.st_rdev, st.st_mode);
 }
 
-struct demi_device *demi_device_ref(struct demi_device *dd)
+void demi_device_finish(struct demi_device *dd)
 {
     if (!dd) {
-        return NULL;
-    }
-
-    dd->ref++;
-    return dd;
-}
-
-void demi_device_unref(struct demi_device *dd)
-{
-    if (!dd) {
-        return;
-    }
-
-    if (--dd->ref > 0) {
         return;
     }
 
     udev_device_unref(dd->udev_device);
-    free(dd);
 }

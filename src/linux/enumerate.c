@@ -1,14 +1,12 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include <dirent.h>
 
 #include "demi.h"
-#include "linux.h"
+#include "device.h"
 
 static int scan_system(struct demi_enumerate *de, const char *path,
-        int (*cb)(struct demi_device *, void *), void *ptr)
+        demi_enumerate_cb cb, void *ptr)
 {
-    struct demi_device *dd;
+    struct demi_device dd;
     struct dirent *dt;
     DIR *dp;
     int dfd;
@@ -26,15 +24,13 @@ static int scan_system(struct demi_enumerate *de, const char *path,
             continue;
         }
 
-        dd = device_new_syspath(de->ctx, dfd, dt->d_name);
-
         // XXX continue?
-        if (!dd) {
+        if (device_init_syspath(&dd, de->ctx, dfd, dt->d_name) == -1) {
             closedir(dp);
             return -1;
         }
 
-        if (cb(dd, ptr) == -1) {
+        if (cb(&dd, ptr) == -1) {
             closedir(dp);
             return -1;
         }
@@ -44,8 +40,8 @@ static int scan_system(struct demi_enumerate *de, const char *path,
     return 0;
 }
 
-int demi_enumerate_scan_system(struct demi_enumerate *de,
-        int (*cb)(struct demi_device *, void *), void *ptr)
+int demi_enumerate_scan_system(struct demi_enumerate *de, demi_enumerate_cb cb,
+        void *ptr)
 {
     static const char *path[] = { "/sys/dev/block", "/sys/dev/char", NULL };
     int i;
@@ -63,44 +59,17 @@ int demi_enumerate_scan_system(struct demi_enumerate *de,
     return 0;
 }
 
-struct demi_enumerate *demi_enumerate_new(struct demi *ctx)
+int demi_enumerate_init(struct demi_enumerate *de, struct demi *ctx)
 {
-    struct demi_enumerate *de;
-
-    if (!ctx) {
-        return NULL;
-    }
-
-    de = malloc(sizeof(*de));
-
-    if (!de) {
-        return NULL;
+    if (!de || !ctx) {
+        return -1;
     }
 
     de->ctx = ctx;
-    de->ref = 1;
-    return de;
+    return 0;
 }
 
-struct demi_enumerate *demi_enumerate_ref(struct demi_enumerate *de)
+void demi_enumerate_finish(struct demi_enumerate *de)
 {
-    if (!de) {
-        return NULL;
-    }
-
-    de->ref++;
-    return de;
-}
-
-void demi_enumerate_unref(struct demi_enumerate *de)
-{
-    if (!de) {
-        return;
-    }
-
-    if (--de->ref > 0) {
-        return;
-    }
-
-    free(de);
+    (void)de;
 }

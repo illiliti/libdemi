@@ -38,4 +38,4 @@ struct evdev {
     unsigned long ev[BITS_TO_LONGS(EV_CNT)];
 };
 
-enum demi_type parse_evdev(struct evdev *);
+enum demi_type parse_evdev(struct evdev *evdev);
