@@ -25,7 +25,6 @@ add_project_arguments(cc.get_supported_arguments([
     '-Wmissing-prototypes',
     '-Wimplicit-fallthrough=2',
 
-    # this is good but mostly useless
     '-Wno-sign-conversion',
   ]),
   language: 'c',
@@ -38,14 +37,14 @@ demi_dep = []
 subdir('src')
 subdir('include')
 
-demi_sym = 'libdemi.sym'
+demi_sym = meson.current_source_dir() / 'libdemi.sym'
 demi_lib = library(
   meson.project_name(),
   demi_src,
   include_directories: demi_inc,
   dependencies: demi_dep,
   version: meson.project_version(),
-  link_args: '-Wl,--version-script,' + meson.current_source_dir() / demi_sym,
+  link_args: '-Wl,--version-script,' + demi_sym,
   link_depends: demi_sym,
   install: true,
 )
