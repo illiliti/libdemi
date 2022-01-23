@@ -346,7 +346,7 @@ static int read_subsystem(struct demi_device *dd, int dfd)
     char path[48];
     ssize_t len;
 
-    len = readlinkat(dfd, "subsystem", path, sizeof(path));
+    len = readlinkat(dfd, "subsystem", path, sizeof(path) - 1);
 
     if (len == -1) {
         return 0;
