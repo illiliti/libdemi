@@ -60,6 +60,7 @@ static int scan_system(struct demi_enumerate *de, const char *dev,
         }
     }
 
+    free(laa.l_childname);
     return 0;
 }
 
