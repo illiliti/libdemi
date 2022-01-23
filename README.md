@@ -66,6 +66,8 @@ int main(void)
         goto finish_mon;
     }
 
+    struct demi_device dev;
+
     // This function may block if blocking mode was manually set to fd above.
     if (demi_monitor_recv_device(&mon, &dev) == -1) {
         ret = EXIT_FAILURE;
