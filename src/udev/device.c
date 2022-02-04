@@ -89,7 +89,7 @@ int demi_device_get_devnum(struct demi_device *dd, dev_t *devnum)
 int demi_device_get_devunit(struct demi_device *dd, uint32_t *devunit)
 {
     const char *sysnum;
-    
+
     if (!dd || !devunit) {
         errno = EINVAL;
         return -1;
@@ -177,7 +177,7 @@ int demi_device_get_class(struct demi_device *dd, enum demi_class *class)
     if (dd->class) {
         *class = dd->class;
         return 0;
-    } 
+    }
 
     subsystem = udev_device_get_subsystem(dd->udev_device);
 
@@ -201,13 +201,13 @@ int demi_device_get_class(struct demi_device *dd, enum demi_class *class)
     return 0;
 }
 
-int demi_device_get_type(struct demi_device *dd, enum demi_type *type)
+int demi_device_get_type(struct demi_device *dd, uint32_t *type)
 {
     struct udev_device *parent;
     enum demi_class class;
     const char *boot_vga;
     int i;
-    
+
     if (!dd || !type) {
         errno = EINVAL;
         return -1;
@@ -216,7 +216,7 @@ int demi_device_get_type(struct demi_device *dd, enum demi_type *type)
     if (dd->type) {
         *type = dd->type;
         return 0;
-    } 
+    }
 
     if (demi_device_get_class(dd, &class) == -1) {
         return -1;
@@ -240,7 +240,7 @@ int demi_device_get_type(struct demi_device *dd, enum demi_type *type)
         for (i = 0; prop_type[i].prop; i++) {
             if (udev_device_get_property_value(dd->udev_device,
                 prop_type[i].prop)) {
-                dd->type = prop_type[i].type;
+                dd->type |= prop_type[i].type;
                 break;
             }
         }

@@ -197,7 +197,7 @@ int demi_device_get_class(struct demi_device *dd, enum demi_class *class)
     if (dd->class) {
         *class = dd->class;
         return 0;
-    } 
+    }
 
     if (demi_device_get_devname(dd, &devname) == -1) {
         return -1;
@@ -223,7 +223,7 @@ int demi_device_get_class(struct demi_device *dd, enum demi_class *class)
     return 0;
 }
 
-int demi_device_get_type(struct demi_device *dd, enum demi_type *type)
+int demi_device_get_type(struct demi_device *dd, uint32_t *type)
 {
     const char *devname;
 
@@ -235,7 +235,7 @@ int demi_device_get_type(struct demi_device *dd, enum demi_type *type)
     if (dd->type) {
         *type = dd->type;
         return 0;
-    } 
+    }
 
     if (demi_device_get_devname(dd, &devname) == -1) {
         return -1;

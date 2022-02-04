@@ -1,9 +1,10 @@
+#include <stdint.h>
 #include <string.h>
 
 #include "demi.h"
 #include "wscons.h"
 
-enum demi_type parse_wscons(const char *devname)
+uint32_t parse_wscons(const char *devname)
 {
     // TODO lookup table
     if (strncmp(devname, "wskbd", 5) == 0) {

@@ -14,9 +14,9 @@ struct demi_device {
     mode_t devtype;
     int32_t devunit;
 
-    enum demi_action action;
+    uint32_t type;
     enum demi_class class;
-    enum demi_type type;
+    enum demi_action action;
 };
 
 struct demi_monitor {

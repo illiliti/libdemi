@@ -167,7 +167,7 @@ int demi_device_get_class(struct demi_device *dd, enum demi_class *class)
     return 0;
 }
 
-int demi_device_get_type(struct demi_device *dd, enum demi_type *type)
+int demi_device_get_type(struct demi_device *dd, uint32_t *type)
 {
     if (!dd || !type) {
         errno = EINVAL;
@@ -177,7 +177,7 @@ int demi_device_get_type(struct demi_device *dd, enum demi_type *type)
     if (dd->type) {
         *type = dd->type;
         return 0;
-    } 
+    }
 
     *type = DEMI_TYPE_UNKNOWN;
     return 0;

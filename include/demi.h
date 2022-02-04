@@ -18,7 +18,7 @@ int demi_device_get_devnum(struct demi_device *device, dev_t *devnum);
 int demi_device_get_action(struct demi_device *device,
         enum demi_action *action);
 int demi_device_get_class(struct demi_device *device, enum demi_class *class);
-int demi_device_get_type(struct demi_device *device, enum demi_type *type);
+int demi_device_get_type(struct demi_device *device, uint32_t *type);
 int demi_device_get_seat(struct demi_device *device, const char **seat);
 
 int demi_device_init_devnode(struct demi_device *device, struct demi *context,

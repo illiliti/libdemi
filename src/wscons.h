@@ -1,3 +1,5 @@
+#include <stdint.h>
+
 #include "demi.h"
 
-enum demi_type parse_wscons(const char *devname);
+uint32_t parse_wscons(const char *devname);

@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <limits.h>
 
 #if defined(__linux__)
@@ -38,4 +39,4 @@ struct evdev {
     unsigned long ev[BITS_TO_LONGS(EV_CNT)];
 };
 
-enum demi_type parse_evdev(struct evdev *evdev);
+uint32_t parse_evdev(struct evdev *evdev);
