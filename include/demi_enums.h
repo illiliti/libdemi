@@ -11,6 +11,7 @@ enum demi_type {
     DEMI_TYPE_ACCELEROMETER = 1 << 8,
     DEMI_TYPE_POINTING_STICK = 1 << 9,
     DEMI_TYPE_BOOT_VGA = 1 << 10,
+    DEMI_TYPE_KEY = 1 << 11,
 };
 
 // TODO extend

@@ -11,6 +11,7 @@ static inline int test_bit(unsigned long *arr, unsigned long bit)
 uint32_t parse_evdev(struct evdev *evdev)
 {
     uint32_t type = 0;
+    unsigned long bit;
 
     if (test_bit(evdev->prop, INPUT_PROP_POINTING_STICK)) {
         type |= DEMI_TYPE_POINTING_STICK;
@@ -62,9 +63,14 @@ uint32_t parse_evdev(struct evdev *evdev)
         }
     }
 
-    // TODO iterate over KEY?
-    if (test_bit(evdev->key, KEY_ENTER)) {
-        type |= DEMI_TYPE_KEYBOARD;
+    for (bit = KEY_ESC; bit < BTN_MISC; bit++) {
+        if (test_bit(evdev->key, bit)) {
+            type |= DEMI_TYPE_KEY;
+
+            if (test_bit(evdev->key, KEY_ENTER)) {
+                type |= DEMI_TYPE_KEYBOARD;
+            }
+        }
     }
 
     return type;
