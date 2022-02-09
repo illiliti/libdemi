@@ -70,6 +70,8 @@ uint32_t parse_evdev(struct evdev *evdev)
             if (test_bit(evdev->key, KEY_ENTER)) {
                 type |= DEMI_TYPE_KEYBOARD;
             }
+
+            break;
         }
     }
 
