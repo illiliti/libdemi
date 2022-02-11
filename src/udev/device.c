@@ -17,6 +17,7 @@ static const struct {
     { "ID_INPUT_TABLET", DEMI_TYPE_TABLET },
     { "ID_INPUT_TOUCHPAD", DEMI_TYPE_TOUCHPAD },
     { "ID_INPUT_KEYBOARD", DEMI_TYPE_KEYBOARD },
+    { "ID_INPUT_KEY", DEMI_TYPE_KEY },
     { "ID_INPUT_JOYSTICK", DEMI_TYPE_JOYSTICK },
     { "ID_INPUT_TOUCHSCREEN", DEMI_TYPE_TOUCHSCREEN },
     { "ID_INPUT_SWITCH", DEMI_TYPE_SWITCH },
@@ -265,8 +266,8 @@ int device_init(struct demi_device *dd, struct demi *ctx,
     return 0;
 }
 
-int demi_device_init_devnum(struct demi_device *dd, struct demi *ctx, dev_t devnum,
-        mode_t type)
+int demi_device_init_devnum(struct demi_device *dd, struct demi *ctx,
+        dev_t devnum, mode_t type)
 {
     struct udev_device *udev_device;
 
