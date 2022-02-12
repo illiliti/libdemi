@@ -1,4 +1,3 @@
-#include <stdlib.h>
 #include <string.h>
 #include <sys/drvctlio.h>
 #include <prop/proplib.h>
@@ -10,6 +9,7 @@ int demi_monitor_recv_device(struct demi_monitor *dm, struct demi_device *dd)
 {
     const char *action, *device;
     prop_dictionary_t event;
+    enum demi_action type;
     int ret;
 
     if (!dm || !dd) {
@@ -24,15 +24,16 @@ int demi_monitor_recv_device(struct demi_monitor *dm, struct demi_device *dd)
     prop_dictionary_get_cstring_nocopy(event, "device", &device);
 
     if (strcmp(action, "device-attach") == 0) {
-        ret = device_init(dd, dm->ctx, NULL, device, 0, 0, DEMI_ACTION_ATTACH);
+        type = DEMI_ACTION_ATTACH;
     }
     else if (strcmp(action, "device-detach") == 0) {
-        ret = device_init(dd, dm->ctx, NULL, device, 0, 0, DEMI_ACTION_DETACH);
+        type = DEMI_ACTION_DETACH;
     }
     else {
-        abort();
+        type = DEMI_ACTION_UNKNOWN;
     }
 
+    ret = device_init(dd, dm->ctx, NULL, device, 0, 0, type);
     prop_object_release(event);
     return ret;
 }
