@@ -29,7 +29,7 @@ static int scan_system(struct demi_enumerate *de, const char *dev,
         children = laa.l_children;
 
         if (reallocarr(&laa.l_childname, children,
-            sizeof(laa.l_childname[0])) != 0) {
+                sizeof(laa.l_childname[0])) != 0) {
             free(laa.l_childname);
             return -1;
         }
@@ -44,7 +44,7 @@ static int scan_system(struct demi_enumerate *de, const char *dev,
     for (i = 0; i < laa.l_children; i++) {
         // XXX continue?
         if (device_init(&dd, de->ctx, NULL,
-            laa.l_childname[i], 0, 0, 0) == -1) {
+                laa.l_childname[i], 0, 0, 0) == -1) {
             free(laa.l_childname);
             return -1;
         }
