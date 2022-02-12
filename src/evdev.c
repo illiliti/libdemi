@@ -75,5 +75,5 @@ uint32_t parse_evdev(struct evdev *evdev)
         }
     }
 
-    return type;
+    return type ? type : DEMI_TYPE_UNKNOWN;
 }
