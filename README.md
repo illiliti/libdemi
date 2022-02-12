@@ -4,7 +4,7 @@
 
 Device enumeration, monitoring and introspecting library
 
-## Example
+## Showcase
 
 ```c
 #include <demi.h>
