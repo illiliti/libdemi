@@ -275,7 +275,7 @@ int demi_device_init_devnum(struct demi_device *dd, struct demi *ctx,
         return -1;
     }
 
-    switch (type & (S_IFCHR | S_IFBLK)) {
+    switch (type) {
     case S_IFCHR:
         udev_device = udev_device_new_from_devnum(ctx->udev, 'c', devnum);
         break;
@@ -311,6 +311,7 @@ int demi_device_init_devnode(struct demi_device *dd, struct demi *ctx,
         return -1;
     }
 
+    st.st_mode = st.st_mode & (S_IFBLK | S_IFCHR);
     return demi_device_init_devnum(dd, ctx, st.st_rdev, st.st_mode);
 }
 
