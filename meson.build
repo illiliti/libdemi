@@ -44,6 +44,7 @@ demi_lib = library(
   include_directories: demi_inc,
   dependencies: demi_dep,
   version: meson.project_version(),
+  # NOTE tcc doesn't support this
   link_args: '-Wl,--version-script,' + demi_sym,
   link_depends: demi_sym,
   install: true,
