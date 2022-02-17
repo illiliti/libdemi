@@ -43,8 +43,7 @@ static int scan_system(struct demi_enumerate *de, const char *dev,
 
     for (i = 0; i < laa.l_children; i++) {
         // XXX continue?
-        if (device_init(&dd, de->ctx, NULL,
-                laa.l_childname[i], 0, 0, 0) == -1) {
+        if (device_init(&dd, de->ctx, laa.l_childname[i], 0, 0, 0) == -1) {
             free(laa.l_childname);
             return -1;
         }

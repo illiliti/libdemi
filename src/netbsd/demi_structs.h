@@ -1,3 +1,4 @@
+#include <limits.h>
 #include <stdint.h>
 #include <sys/types.h>
 
@@ -6,9 +7,10 @@ struct demi {
 };
 
 struct demi_device {
+    char devnode[PATH_MAX];
+    char devname[PATH_MAX - (sizeof("/dev/") - 1)];
+
     struct demi *ctx;
-    char *devnode;
-    char *devname;
 
     dev_t devnum;
     mode_t devtype;

@@ -1,6 +1,4 @@
 #include <errno.h>
-#include <stdio.h>
-#include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -12,58 +10,43 @@
 
 int demi_device_get_devname(struct demi_device *dd, const char **devname)
 {
-    size_t len = 1;
+    size_t len;
 
     if (!dd || !devname) {
         errno = EINVAL;
         return -1;
     }
 
-    if (dd->devname) {
+    if (dd->devname[0] != '\0') {
         *devname = dd->devname;
         return 0;
     }
 
-    while (1) {
-        len += 48;
-
-        if (reallocarr(&dd->devname, 1, len) != 0) {
-            free(dd->devname);
-            dd->devname = NULL;
-            return -1;
-        }
-
-        switch (devname_r(dd->devnum, dd->devtype, dd->devname, len)) {
-        case 0:
-            *devname = dd->devname;
-            return 0;
-        case ERANGE:
-            continue;
-        case ENOENT:
-            free(dd->devname);
-            dd->devname = NULL;
-            errno = ENOENT;
-            return -1;
-        default:
-            abort();
-        }
+    len = sizeof(dd->devname);
+    switch (devname_r(dd->devnum, dd->devtype, dd->devname, len)) {
+    case 0:
+        *devname = dd->devname;
+        return 0;
+    case ENOENT:
+        errno = ENOENT;
+        break;
+    default:
+        break;
     }
 
-    // XXX unreachable
-    abort();
+    return -1;
 }
 
 int demi_device_get_devnode(struct demi_device *dd, const char **devnode)
 {
     const char *devname;
-    size_t len;
 
     if (!dd || !devnode) {
         errno = EINVAL;
         return -1;
     }
 
-    if (dd->devnode) {
+    if (dd->devnode[0] != '\0') {
         *devnode = dd->devnode;
         return 0;
     }
@@ -72,24 +55,8 @@ int demi_device_get_devnode(struct demi_device *dd, const char **devnode)
         return -1;
     }
 
-    len = 5 + strlen(devname) + 1;
-    dd->devnode = malloc(len);
-
-    if (!dd->devnode) {
-        return -1;
-    }
-
-    // TODO use memcpy
-    snprintf(dd->devnode, len, "/dev/%s", devname);
-
-    // FIXME TOCTOU
-    if (access(dd->devnode, F_OK) == -1) {
-        free(dd->devnode);
-        dd->devnode = NULL;
-        errno = ENOENT;
-        return -1;
-    }
-
+    strlcpy(dd->devnode, "/dev/", sizeof(dd->devnode));
+    strlcat(dd->devnode, devname, sizeof(dd->devnode));
     *devnode = dd->devnode;
     return 0;
 }
@@ -246,10 +213,11 @@ int demi_device_get_type(struct demi_device *dd, uint32_t *type)
     return 0;
 }
 
-int device_init(struct demi_device *dd, struct demi *ctx,
-        const char *devnode, const char *devname, dev_t devnum, mode_t type,
-        enum demi_action action)
+int device_init(struct demi_device *dd, struct demi *ctx, const char *devname,
+        dev_t devnum, mode_t type, enum demi_action action)
 {
+    size_t len;
+
     memset(dd, 0, sizeof(*dd));
 
     dd->ctx = ctx;
@@ -258,21 +226,14 @@ int device_init(struct demi_device *dd, struct demi *ctx,
     dd->devtype = type;
     dd->devunit = -1;
 
-    if (devname) {
-        dd->devname = strdup(devname);
-
-        if (!dd->devname) {
-            return -1;
-        }
+    if (!devname) {
+        return 0;
     }
 
-    if (devnode) {
-        dd->devnode = strdup(devnode);
+    len = sizeof(dd->devname);
 
-        if (!dd->devnode) {
-            free(dd->devname);
-            return -1;
-        }
+    if (strlcpy(dd->devname, devname, len) >= len) {
+        return -1;
     }
 
     return 0;
@@ -289,7 +250,7 @@ int demi_device_init_devnode(struct demi_device *dd, struct demi *ctx,
         return -1;
     }
 
-    return device_init(dd, ctx, devnode, devnode + 5, 0, 0, 0);
+    return device_init(dd, ctx, devnode + 5, 0, 0, 0);
 }
 
 int demi_device_init_devnum(struct demi_device *dd, struct demi *ctx,
@@ -299,19 +260,14 @@ int demi_device_init_devnum(struct demi_device *dd, struct demi *ctx,
         return -1;
     }
 
-    if (!S_ISCHR(type) && !S_ISBLK(type)) {
+    if (type != S_IFCHR && type != S_IFBLK) {
         return -1;
     }
 
-    return device_init(dd, ctx, NULL, NULL, devnum, type, 0);
+    return device_init(dd, ctx, NULL, devnum, type, 0);
 }
 
 void demi_device_finish(struct demi_device *dd)
 {
-    if (!dd) {
-        return;
-    }
-
-    free(dd->devnode);
-    free(dd->devname);
+    (void)dd;
 }

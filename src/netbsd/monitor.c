@@ -33,7 +33,7 @@ int demi_monitor_recv_device(struct demi_monitor *dm, struct demi_device *dd)
         type = DEMI_ACTION_UNKNOWN;
     }
 
-    ret = device_init(dd, dm->ctx, NULL, device, 0, 0, type);
+    ret = device_init(dd, dm->ctx, device, 0, 0, type);
     prop_object_release(event);
     return ret;
 }
