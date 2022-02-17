@@ -8,7 +8,7 @@ Device enumeration, monitoring and introspecting library
 
 ```c
 #include <demi.h>
-#include <poll.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -56,19 +56,23 @@ int main(void)
         goto finish_enu;
     }
 
-    struct poll pfd;
+    int fd = demi_monitor_get_fd(&mon);
+    int flags = fcntl(fd, F_GETFL);
 
-    pfd.events = POLLIN;
-    pfd.fd = demi_monitor_get_fd(&mon);
+    if (flags == -1) {
+        ret = EXIT_FAILURE;
+        goto finish_mon;
+    }
 
-    if (poll(&pfd, 1, -1) == -1) {
+    flags &= ~O_NONBLOCK;
+    if (fcntl(fd, F_SETFL, flags) == -1) {
         ret = EXIT_FAILURE;
         goto finish_mon;
     }
 
     struct demi_device dev;
 
-    // This function may block if blocking mode was manually set to fd above.
+    // This function will block since fd was set to blocking mode.
     if (demi_monitor_recv_device(&mon, &dev) == -1) {
         ret = EXIT_FAILURE;
         goto finish_mon;
