@@ -1,15 +1,15 @@
 #include <stdint.h>
+#include <limits.h>
 
 struct demi {
     char dummy;
 };
 
 struct demi_device {
+    char devnode[PATH_MAX];
+    char devname[PATH_MAX - (sizeof("/dev/") - 1)];
+
     struct demi *ctx;
-    char *parent_uevent;
-    char *subsystem;
-    char *devnode;
-    char *devname;
 
     int32_t major;
     int32_t minor;
