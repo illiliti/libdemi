@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <linux/netlink.h>
@@ -39,6 +40,7 @@ int demi_monitor_recv_device(struct demi_monitor *dm, struct demi_device *dd)
         return -1;
     }
 
+    assert(buf[len] == '\0');
     return device_init_uevent(dd, dm->ctx, buf, len);
 }
 
