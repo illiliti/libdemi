@@ -11,3 +11,10 @@ option(
   value: 0x4,
   description: 'Listen for uevents with netlink group',
 )
+
+option(
+  'devd_socket',
+  type: 'string',
+  value: '/var/run/devd.seqpacket.pipe',
+  description: 'Path to devd socket',
+)

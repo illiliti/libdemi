@@ -8,6 +8,10 @@ elif host_machine.system() == 'linux'
   demi_inc += include_directories('.')
   demi_src += files('evdev.c')
   subdir('linux')
+elif host_machine.system() == 'freebsd'
+  demi_inc += include_directories('.')
+  demi_src += files('evdev.c')
+  subdir('freebsd')
 else
   error('Unsupported platform')
 endif
