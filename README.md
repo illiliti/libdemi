@@ -91,3 +91,7 @@ do_exit:
     return ret;
 }
 ```
+
+## See also
+
+https://github.com/illiliti/kiss-libdemi
