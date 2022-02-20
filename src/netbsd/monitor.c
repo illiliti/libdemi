@@ -1,3 +1,5 @@
+#include <fcntl.h>
+#include <unistd.h>
 #include <string.h>
 #include <sys/drvctlio.h>
 #include <prop/proplib.h>
@@ -16,7 +18,7 @@ int demi_monitor_recv_device(struct demi_monitor *dm, struct demi_device *dd)
         return -1;
     }
 
-    if (prop_dictionary_recv_ioctl(dm->ctx->fd, DRVGETEVENT, &event) != 0) {
+    if (prop_dictionary_recv_ioctl(dm->fd, DRVGETEVENT, &event) != 0) {
         return -1;
     }
 
@@ -44,16 +46,26 @@ int demi_monitor_init(struct demi_monitor *dm, struct demi *ctx)
         return -1;
     }
 
+    dm->fd = open(DRVCTLDEV, O_RDWR | O_CLOEXEC | O_NONBLOCK);
+
+    if (dm->fd == -1) {
+        return -1;
+    }
+
     dm->ctx = ctx;
     return 0;
 }
 
 void demi_monitor_finish(struct demi_monitor *dm)
 {
-    (void)dm;
+    if (!dm) {
+        return;
+    }
+
+    close(dm->fd);
 }
 
 int demi_monitor_get_fd(struct demi_monitor *dm)
 {
-    return dm ? dm->ctx->fd : -1;
+    return dm ? dm->fd : -1;
 }

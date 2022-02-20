@@ -5,7 +5,7 @@
 #define DEMI_DEVNODE_MAX (DEMI_DEVNAME_MAX + (sizeof("/dev/") - 1))
 
 struct demi {
-    int fd;
+    char dummy;
 };
 
 struct demi_device {
@@ -25,4 +25,6 @@ struct demi_device {
 
 struct demi_monitor {
     struct demi *ctx;
+
+    int fd;
 };
