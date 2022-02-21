@@ -41,7 +41,7 @@ int demi_monitor_recv_device(struct demi_monitor *dm, struct demi_device *dd)
     }
 
     assert(buf[len - 1] == '\0');
-    return device_init_uevent(dd, dm->ctx, buf, len);
+    return device_init_uevent(dd, dm->ctx, buf, (size_t)len);
 }
 
 int demi_monitor_init(struct demi_monitor *dm, struct demi *ctx)

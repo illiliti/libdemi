@@ -24,8 +24,6 @@ add_project_arguments(cc.get_supported_arguments([
     '-Wstrict-prototypes',
     '-Wmissing-prototypes',
     '-Wimplicit-fallthrough=2',
-
-    '-Wno-sign-conversion',
   ]),
   language: 'c',
 )

@@ -64,7 +64,7 @@ int demi_device_get_devnum(struct demi_device *dd, dev_t *devnum)
         return -1;
     }
 
-    *devnum = makedev(dd->major, dd->minor);
+    *devnum = makedev((uint32_t)dd->major, (uint32_t)dd->minor);
     return 0;
 }
 
@@ -78,7 +78,7 @@ int demi_device_get_devunit(struct demi_device *dd, uint32_t *devunit)
     }
 
     if (dd->devunit != -1) {
-        *devunit = dd->devunit;
+        *devunit = (uint32_t)dd->devunit;
         return 0;
     }
 
@@ -90,7 +90,7 @@ int demi_device_get_devunit(struct demi_device *dd, uint32_t *devunit)
     for (i = 0; dd->devname[i] != '\0'; i++) {
         if (dd->devname[i] >= '0' && dd->devname[i] <= '9') {
             dd->devunit = (int32_t)strtol(dd->devname + i, NULL, 10);
-            *devunit = dd->devunit;
+            *devunit = (uint32_t)dd->devunit;
             return 0;
         }
     }

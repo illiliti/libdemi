@@ -47,7 +47,7 @@ int demi_monitor_recv_device(struct demi_monitor *dm, struct demi_device *dd)
         pos += 1;
     }
 
-    return device_init_msg(dd, dm->ctx, msg, len);
+    return device_init_msg(dd, dm->ctx, msg, (size_t)len);
 }
 
 int demi_monitor_init(struct demi_monitor *dm, struct demi *ctx)
