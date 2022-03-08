@@ -17,8 +17,6 @@ struct demi_device {
     int32_t minor;
     int32_t devunit;
 
-    uint32_t type;
-    enum demi_class class;
     enum demi_action action;
 };
 

@@ -9,23 +9,6 @@
 #include "demi.h"
 #include "device.h"
 
-static const struct {
-    const char *prop;
-    enum demi_type type;
-} prop_type[] = {
-    { "ID_INPUT_MOUSE", DEMI_TYPE_MOUSE },
-    { "ID_INPUT_TABLET", DEMI_TYPE_TABLET },
-    { "ID_INPUT_TOUCHPAD", DEMI_TYPE_TOUCHPAD },
-    { "ID_INPUT_KEYBOARD", DEMI_TYPE_KEYBOARD },
-    { "ID_INPUT_KEY", DEMI_TYPE_KEY },
-    { "ID_INPUT_JOYSTICK", DEMI_TYPE_JOYSTICK },
-    { "ID_INPUT_TOUCHSCREEN", DEMI_TYPE_TOUCHSCREEN },
-    { "ID_INPUT_SWITCH", DEMI_TYPE_SWITCH },
-    { "ID_INPUT_POINTINGSTICK", DEMI_TYPE_POINTING_STICK },
-    { "ID_INPUT_ACCELEROMETER", DEMI_TYPE_ACCELEROMETER },
-    { NULL, 0 },
-};
-
 int demi_device_get_devnode(struct demi_device *dd, const char **devnode)
 {
     const char *node;
@@ -163,96 +146,6 @@ int demi_device_get_action(struct demi_device *dd, enum demi_action *action)
     }
 
     *action = dd->action;
-    return 0;
-}
-
-int demi_device_get_class(struct demi_device *dd, enum demi_class *class)
-{
-    const char *subsystem;
-
-    if (!dd || !class) {
-        errno = EINVAL;
-        return -1;
-    }
-
-    if (dd->class) {
-        *class = dd->class;
-        return 0;
-    }
-
-    subsystem = udev_device_get_subsystem(dd->udev_device);
-
-    if (!subsystem) {
-        errno = ENOENT;
-        return -1;
-    }
-
-    // TODO lookup table
-    if (strcmp(subsystem, "drm") == 0) {
-        dd->class = DEMI_CLASS_DRM;
-    }
-    else if (strcmp(subsystem, "input") == 0) {
-        dd->class = DEMI_CLASS_INPUT;
-    }
-    else {
-        dd->class = DEMI_CLASS_UNKNOWN;
-    }
-
-    *class = dd->class;
-    return 0;
-}
-
-int demi_device_get_type(struct demi_device *dd, uint32_t *type)
-{
-    struct udev_device *parent;
-    enum demi_class class;
-    const char *boot_vga;
-    int i;
-
-    if (!dd || !type) {
-        errno = EINVAL;
-        return -1;
-    }
-
-    if (dd->type) {
-        *type = dd->type;
-        return 0;
-    }
-
-    if (demi_device_get_class(dd, &class) == -1) {
-        return -1;
-    }
-
-    switch (class) {
-    case DEMI_CLASS_DRM:
-        parent = udev_device_get_parent_with_subsystem_devtype(dd->udev_device,
-                "pci", NULL);
-
-        if (parent) {
-            boot_vga = udev_device_get_sysattr_value(parent, "boot_vga");
-
-            if (boot_vga && boot_vga[0] == '1') {
-                dd->type = DEMI_TYPE_BOOT_VGA;
-            }
-        }
-
-        break;
-    case DEMI_CLASS_INPUT:
-        for (i = 0; prop_type[i].prop; i++) {
-            if (udev_device_get_property_value(dd->udev_device,
-                prop_type[i].prop)) {
-                dd->type |= prop_type[i].type;
-                break;
-            }
-        }
-
-        break;
-    default:
-        dd->type = DEMI_TYPE_UNKNOWN;
-        break;
-    }
-
-    *type = dd->type;
     return 0;
 }
 

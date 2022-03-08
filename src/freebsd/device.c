@@ -3,13 +3,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <inttypes.h>
 #include <sys/stat.h>
-#include <sys/ioctl.h>
-#include <sys/sysctl.h>
 
 #include "demi.h"
-#include "evdev.h"
 #include "device.h"
 
 int demi_device_get_devname(struct demi_device *dd, const char **devname)
@@ -140,127 +136,6 @@ int demi_device_get_action(struct demi_device *dd, enum demi_action *action)
     }
 
     *action = dd->action;
-    return 0;
-}
-
-static inline enum demi_class parse_class(const char *devname)
-{
-    enum demi_class class;
-
-    // TODO lookup table
-    if (strncmp(devname, "input/", 6) == 0) {
-        class = DEMI_CLASS_INPUT;
-    }
-    else if (strncmp(devname, "dri/", 4) == 0) {
-        class = DEMI_CLASS_DRM;
-    }
-    else {
-        class = DEMI_CLASS_UNKNOWN;
-    }
-
-    return class;
-}
-
-int demi_device_get_class(struct demi_device *dd, enum demi_class *class)
-{
-    const char *devname;
-
-    if (!dd || !class) {
-        errno = EINVAL;
-        return -1;
-    }
-
-    if (dd->class) {
-        *class = dd->class;
-        return 0;
-    }
-
-    if (demi_device_get_devname(dd, &devname) == -1) {
-        return -1;
-    }
-
-    dd->class = parse_class(devname);
-    *class = dd->class;
-    return 0;
-}
-
-// TODO simplify
-static inline int fetch_evdev(struct evdev *evdev, uint32_t unit)
-{
-    char mib[48];
-    size_t len;
-
-    // https://cgit.freebsd.org/src/commit/sys/dev/evdev/evdev.c?id=f99e7b1aed7ea65ca0dbe5b182f2b9cbfdfe54db
-
-    len = sizeof(evdev->ev);
-    snprintf(mib, sizeof(mib), "kern.evdev.input.%" PRIu32 ".type_bits", unit);
-    if (sysctlbyname(mib, &evdev->ev, &len, NULL, 0) == -1) {
-        return -1;
-    }
-
-    len = sizeof(evdev->key);
-    snprintf(mib, sizeof(mib), "kern.evdev.input.%" PRIu32 ".key_bits", unit);
-    if (sysctlbyname(mib, &evdev->key, &len, NULL, 0) == -1) {
-        return -1;
-    }
-
-    len = sizeof(evdev->rel);
-    snprintf(mib, sizeof(mib), "kern.evdev.input.%" PRIu32 ".rel_bits", unit);
-    if (sysctlbyname(mib, &evdev->rel, &len, NULL, 0) == -1) {
-        return -1;
-    }
-
-    len = sizeof(evdev->abs);
-    snprintf(mib, sizeof(mib), "kern.evdev.input.%" PRIu32 ".abs_bits", unit);
-    if (sysctlbyname(mib, &evdev->abs, &len, NULL, 0) == -1) {
-        return -1;
-    }
-
-    len = sizeof(evdev->prop);
-    snprintf(mib, sizeof(mib), "kern.evdev.input.%" PRIu32 ".props", unit);
-    if (sysctlbyname(mib, &evdev->prop, &len, NULL, 0) == -1) {
-        return -1;
-    }
-
-    return 0;
-}
-
-// TODO figure out how to check boot vga(if possible at all)
-int demi_device_get_type(struct demi_device *dd, uint32_t *type)
-{
-    enum demi_class class;
-    struct evdev evdev;
-    uint32_t unit;
-
-    if (!dd || !type) {
-        errno = EINVAL;
-        return -1;
-    }
-
-    if (dd->type) {
-        *type = dd->type;
-        return 0;
-    }
-
-    if (demi_device_get_class(dd, &class) == -1) {
-        return -1;
-    }
-
-    if (class != DEMI_CLASS_INPUT) {
-        errno = ENOENT;
-        return -1;
-    }
-
-    if (demi_device_get_devunit(dd, &unit) == -1) {
-        return -1;
-    }
-
-    if (fetch_evdev(&evdev, unit) == -1) {
-        return -1;
-    }
-
-    dd->type = parse_evdev(&evdev);
-    *type = dd->type;
     return 0;
 }
 

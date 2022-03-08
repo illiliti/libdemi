@@ -5,7 +5,6 @@
 #include <sys/stat.h>
 
 #include "demi.h"
-#include "wscons.h"
 #include "device.h"
 
 int demi_device_get_devname(struct demi_device *dd, const char **devname)
@@ -148,68 +147,6 @@ int demi_device_get_action(struct demi_device *dd, enum demi_action *action)
     }
 
     *action = dd->action;
-    return 0;
-}
-
-int demi_device_get_class(struct demi_device *dd, enum demi_class *class)
-{
-    const char *devname;
-    dev_t devnum;
-
-    if (!dd || !class) {
-        errno = EINVAL;
-        return -1;
-    }
-
-    if (dd->class) {
-        *class = dd->class;
-        return 0;
-    }
-
-    if (demi_device_get_devname(dd, &devname) == -1) {
-        return -1;
-    }
-
-    if (demi_device_get_devnum(dd, &devnum) == -1) {
-        return -1;
-    }
-
-    // TODO lookup table
-    // TODO cache getdevmajor result (pthread_once?)
-    if (major(devnum) == getdevmajor("drm", S_IFCHR)) {
-        dd->class = DEMI_CLASS_DRM;
-    }
-    else if (parse_wscons(devname) != DEMI_TYPE_UNKNOWN) {
-        dd->class = DEMI_CLASS_INPUT;
-    }
-    else {
-        dd->class = DEMI_CLASS_UNKNOWN;
-    }
-
-    *class = dd->class;
-    return 0;
-}
-
-int demi_device_get_type(struct demi_device *dd, uint32_t *type)
-{
-    const char *devname;
-
-    if (!dd || !type) {
-        errno = EINVAL;
-        return -1;
-    }
-
-    if (dd->type) {
-        *type = dd->type;
-        return 0;
-    }
-
-    if (demi_device_get_devname(dd, &devname) == -1) {
-        return -1;
-    }
-
-    dd->type = parse_wscons(devname);
-    *type = dd->type;
     return 0;
 }
 
