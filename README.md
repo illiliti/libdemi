@@ -11,19 +11,8 @@ Device enumeration, monitoring and introspecting library
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-static int callback(struct demi_device *dev, void *ptr)
-{
-    // You can save dev for later use(outside of callback) if needed.
-    //
-    // struct your_struct *data = ptr;
-    // data->dev = *dev;
-
-    // Do something with dev...
-
-    demi_device_finish(dev);
-    return 0;
-}
+#include <dirent.h>
+#include <sys/stat.h>
 
 int main(void)
 {
@@ -36,24 +25,52 @@ int main(void)
         goto do_exit;
     }
 
-    struct demi_enumerate enu;
+    // Enumerate drm devices.
+    DIR *dp = opendir("/dev/dri");
 
-    if (demi_enumerate_init(&enu, &ctx) == -1) {
+    if (!dp) {
         ret = EXIT_FAILURE;
         goto finish_ctx;
     }
 
-    // Scan connected devices. callback will be called on each device.
-    if (demi_enumerate_scan_system(&enu, callback, NULL) == -1) {
-        ret = EXIT_FAILURE;
-        goto finish_enu;
+    int dfd = dirfd(dp);
+    struct dirent *de;
+
+    while ((de = readdir(dp))) {
+        struct stat st;
+
+        if (fstatat(dfd, de->d_name, &st, 0) == -1) {
+            continue;
+        }
+
+        mode_t type = st.st_mode & (S_IFCHR | S_IFBLK);
+
+        if (!type) {
+            continue;
+        }
+
+        struct demi_device dev;
+
+        if (demi_device_init_devnum(&dev, &ctx, st.st_rdev, type) == -1) {
+            continue;
+        }
+
+        const char *devnode;
+
+        if (demi_device_get_devnode(&dev, &devnode) == 0) {
+            puts(devnode);
+        }
+
+        demi_device_finish(&dev);
     }
+
+    closedir(dp);
 
     struct demi_monitor mon;
 
     if (demi_monitor_init(&mon, &ctx) == -1) {
         ret = EXIT_FAILURE;
-        goto finish_enu;
+        goto finish_ctx;
     }
 
     int fd = demi_monitor_get_fd(&mon);
@@ -78,13 +95,15 @@ int main(void)
         goto finish_mon;
     }
 
-    // Do something with dev...
+    const char *devnode;
+
+    if (demi_device_get_devnode(&dev, &devnode) == 0) {
+        puts(devnode);
+    }
 
     demi_device_finish(&dev);
 finish_mon:
     demi_monitor_finish(&mon);
-finish_enu:
-    demi_enumerate_finish(&enu);
 finish_ctx:
     demi_finish(&ctx);
 do_exit:
