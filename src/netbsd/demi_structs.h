@@ -26,7 +26,3 @@ struct demi_device {
 struct demi_monitor {
     struct demi *ctx;
 };
-
-struct demi_enumerate {
-    struct demi *ctx;
-};

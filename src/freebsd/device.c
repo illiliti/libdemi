@@ -313,8 +313,8 @@ int device_init_msg(struct demi_device *dd, struct demi *ctx,
     return 0;
 }
 
-int device_init(struct demi_device *dd, struct demi *ctx, const char *devname,
-        dev_t devnum, mode_t type)
+static int device_init(struct demi_device *dd, struct demi *ctx,
+        const char *devname, dev_t devnum, mode_t type)
 {
     size_t len;
 

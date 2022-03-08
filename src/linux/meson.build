@@ -3,7 +3,6 @@ demi_src += files(
   'device.c',
   'context.c',
   'monitor.c',
-  'enumerate.c',
 )
 
 install_headers('demi_structs.h', subdir: 'demi')

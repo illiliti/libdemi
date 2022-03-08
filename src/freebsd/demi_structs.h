@@ -29,7 +29,3 @@ struct demi_monitor {
 
     int fd;
 };
-
-struct demi_enumerate {
-    struct demi *ctx;
-};

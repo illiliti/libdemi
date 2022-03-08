@@ -34,11 +34,4 @@ int demi_monitor_recv_device(struct demi_monitor *monitor,
 int demi_monitor_init(struct demi_monitor *monitor, struct demi *context);
 void demi_monitor_finish(struct demi_monitor *monitor);
 
-typedef int (*demi_enumerate_cb)(struct demi_device *device, void *userdata);
-int demi_enumerate_scan_system(struct demi_enumerate *enumerate,
-        demi_enumerate_cb callback, void *userdata);
-
-int demi_enumerate_init(struct demi_enumerate *enumerate, struct demi *context);
-void demi_enumerate_finish(struct demi_enumerate *enumerate);
-
 #endif

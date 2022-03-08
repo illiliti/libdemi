@@ -18,8 +18,3 @@ struct demi_monitor {
     struct udev_monitor *udev_monitor;
     struct demi *ctx;
 };
-
-struct demi_enumerate {
-    struct udev_enumerate *udev_enumerate;
-    struct demi *ctx;
-};
