@@ -1,16 +1,8 @@
-if get_option('udev')
-  subdir('udev')
-elif host_machine.system() == 'netbsd'
-  demi_inc += include_directories('.')
-  demi_src += files('wscons.c')
+if host_machine.system() == 'netbsd'
   subdir('netbsd')
 elif host_machine.system() == 'linux'
-  demi_inc += include_directories('.')
-  demi_src += files('evdev.c')
   subdir('linux')
 elif host_machine.system() == 'freebsd'
-  demi_inc += include_directories('.')
-  demi_src += files('evdev.c')
   subdir('freebsd')
 else
   error('Unsupported platform')
