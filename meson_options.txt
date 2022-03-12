@@ -1,11 +1,4 @@
 option(
-  'udev',
-  type: 'boolean',
-  value: false,
-  description: 'Use libudev as a backend',
-)
-
-option(
   'nl_group',
   type: 'integer',
   value: 0x4,
