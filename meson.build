@@ -35,16 +35,12 @@ demi_dep = []
 subdir('src')
 subdir('include')
 
-demi_sym = meson.current_source_dir() / 'libdemi.sym'
 demi_lib = library(
   meson.project_name(),
   demi_src,
   include_directories: demi_inc,
   dependencies: demi_dep,
   version: meson.project_version(),
-  # NOTE tcc doesn't support this
-  link_args: '-Wl,--version-script,' + demi_sym,
-  link_depends: demi_sym,
   install: true,
 )
 
