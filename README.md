@@ -37,7 +37,7 @@ int main(void)
         snprintf(devnode, sizeof(devnode), "/dev/%s", de.de_devname);
 
         // Print devnode and code of event type.
-        printf("%s (code %d)\n", de.de_devname, de.de_type);
+        printf("%s (code %d)\n", devnode, de.de_type);
     }
 
     // Do not forget to close file descriptor when you are done.
