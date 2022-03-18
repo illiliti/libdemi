@@ -32,7 +32,11 @@ int main(void)
             continue;
         }
 
-        // Print devname and code of event type.
+        // Prepend /dev/ to devname, so that we have full path to devnode.
+        char devnode[sizeof(de.de_devname) + sizeof("/dev/")];
+        snprintf(devnode, sizeof(devnode), "/dev/%s", de.de_devname);
+
+        // Print devnode and code of event type.
         printf("%s (code %d)\n", de.de_devname, de.de_type);
     }
 
