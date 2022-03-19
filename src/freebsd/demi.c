@@ -15,7 +15,8 @@ int demi_read(int fd, struct demi_event *de)
 
     char buf[8192], *msg_ptr, *pos;
     char *var_ptr, *key, *value;
-    ssize_t len;
+    size_t value_len;
+    ssize_t ret_len;
 
     if (!de) {
         errno = EINVAL;
@@ -28,9 +29,9 @@ int demi_read(int fd, struct demi_event *de)
     hdr.msg_iov = &iov;
     hdr.msg_iovlen = 1;
 
-    len = recvmsg(fd, &hdr, 0);
+    ret_len = recvmsg(fd, &hdr, 0);
 
-    if (len <= 0) {
+    if (ret_len <= 0) {
         return -1;
     }
 
@@ -38,9 +39,9 @@ int demi_read(int fd, struct demi_event *de)
         return -1;
     }
 
-    len -= 1;
-    assert(buf[len] == '\n');
-    buf[len] = '\0';
+    ret_len -= 1;
+    assert(buf[ret_len] == '\n');
+    buf[ret_len] = '\0';
 
     *de = (struct demi_event){0};
     pos = strtok_r(buf + 1, " ", &msg_ptr);
@@ -58,7 +59,8 @@ int demi_read(int fd, struct demi_event *de)
         }
 
         if (strcmp(key, "cdev") == 0) {
-            strlcpy(de->de_devname, value, sizeof(de->de_devname));
+            value_len = sizeof(de->de_devname);
+            assert(strlcpy(de->de_devname, value, value_len) < value_len);
         }
         else if (strcmp(key, "type") != 0) {
             continue;
