@@ -48,8 +48,7 @@ int demi_read(int fd, struct demi_event *de)
     len -= 1;
     assert(buf[len] == '\0');
     msg = buf;
-
-    memset(de, 0, sizeof(*de));
+    *de = (struct demi_event){0};
 
     for (end = msg + len; msg < end; msg += strlen(msg) + 1) {
         key = strtok_r(msg, "=", &ptr);

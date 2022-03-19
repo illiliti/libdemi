@@ -42,7 +42,7 @@ int demi_read(int fd, struct demi_event *de)
     assert(buf[len] == '\n');
     buf[len] = '\0';
 
-    memset(de, 0, sizeof(*de));
+    *de = (struct demi_event){0};
     pos = strtok_r(buf + 1, " ", &msg_ptr);
 
     if (!pos) {
