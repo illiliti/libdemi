@@ -59,6 +59,7 @@ int demi_read(int fd, struct demi_event *de)
         }
 
         if (strcmp(key, "DEVNAME") == 0) {
+            assert(strlen(value) < sizeof(de->de_devname));
             snprintf(de->de_devname, sizeof(de->de_devname), "%s", value);
         }
         else if (strcmp(key, "ACTION") != 0) {
